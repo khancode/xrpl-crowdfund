@@ -1,11 +1,9 @@
-const xrpl = require('xrpl')
-
-const { Client } = xrpl
+import { Client } from 'xrpl'
 
 const client = new Client(`wss://hooks-testnet-v3.xrpl-labs.com`)
 
 
-async function connectClient() {
+async function connectClient(): Promise<void> {
   console.log('\nclient connecting...')
   await client.connect()
   console.log('client connected!\n')
@@ -17,7 +15,7 @@ async function disconnectClient() {
   console.log('client connected!')
 }
 
-module.exports = {
+export {
   client,
   connectClient,
   disconnectClient,

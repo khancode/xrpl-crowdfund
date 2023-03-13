@@ -1,25 +1,26 @@
-const fs = require('fs')
-const path = require('path')
+import fs from 'fs'
+import path from 'path'
 
-const addr = require('ripple-address-codec')
-const { Wallet } = require('xrpl')
-const { prepareTransactionV3 } = require('./util/transaction')
+import { SHA256 } from 'crypto-js';
+import { Transaction, Wallet } from 'xrpl'
+import { prepareTransactionV3 } from './util/transaction'
 
-const config = require('../config.json')
-const { client, connectClient, disconnectClient } = require('./util/xrpl-client')
+import config from '../config.json'
+import { client, connectClient, disconnectClient } from './util/xrpl-client'
 
 
 const hookFilename = config.HOOK_C_FILENAME
 const HOOK_ACCOUNT = Wallet.fromSecret(config.HOOK_ACCOUNT.secret)
 const hsfOVERRIDE = 1
 const wasm = fs.readFileSync(path.resolve(__dirname, `../build/${hookFilename}.wasm`))
-const hookNamespace = addr.codec._sha256(hookFilename).toString(`hex`).toUpperCase()
+const hookNamespace = SHA256(hookFilename).toString().toUpperCase()
 
 
 async function run() {
   await connectClient()
 
-  const tx = {
+  const tx: Transaction = {
+    // @ts-expect-error -- SetHook is a new transaction type not added to xrpl.js yet
     TransactionType: `SetHook`,
     Account: HOOK_ACCOUNT.address,
     Hooks: [        
@@ -49,6 +50,7 @@ async function run() {
   console.log(`\n3. Transaction result:`)
   console.log(result)
 
+  // @ts-expect-error -- this is expected to be defined
   const txResult = result.result.meta.TransactionResult
   if (txResult === 'tesSUCCESS') {
     console.log(`\n4. SetHook transaction succeeded!`)

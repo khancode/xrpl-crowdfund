@@ -22,7 +22,7 @@ build:
 	./xrpld-hooks/src/ripple/app/hook/guard_checker ./build/$(HOOK_C_FILENAME).wasm
 
 set-hook:
-	node ./client/set-hook.js
+	ts-node ./client/set-hook.ts
 
 clean:
 	rm -rf build/*
