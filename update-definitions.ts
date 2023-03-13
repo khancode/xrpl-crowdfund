@@ -1,9 +1,13 @@
-const fs = require('fs')
+import { writeFileSync } from 'fs'
 
-const { client, connectClient, disconnectClient } = require('./client/util/xrpl-client')
+import {
+  client,
+  connectClient,
+  disconnectClient,
+} from './client/util/xrpl-client'
 
-const DEFINITIONS_JSON_PATH = './node_modules/ripple-binary-codec/dist/enums/definitions.json'
-
+const DEFINITIONS_JSON_PATH =
+  './node_modules/ripple-binary-codec/dist/enums/definitions.json'
 
 async function server_definitions() {
   const request = {
@@ -20,7 +24,7 @@ async function run() {
   console.log('\n1. fetched definitions:')
   console.log(response)
 
-  await fs.writeFileSync(
+  await writeFileSync(
     DEFINITIONS_JSON_PATH,
     JSON.stringify(response.result, null, 2)
   )

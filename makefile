@@ -12,7 +12,7 @@ install:
 	cp config-example.json config.json
 
 update-definitions:
-	node update-definitions.js
+	npx ts-node update-definitions.ts
 
 build:
 	mkdir -p build
@@ -22,7 +22,7 @@ build:
 	./xrpld-hooks/src/ripple/app/hook/guard_checker ./build/$(HOOK_C_FILENAME).wasm
 
 set-hook:
-	ts-node ./client/set-hook.ts
+	npx ts-node ./client/set-hook.ts
 
 clean:
 	rm -rf build/*

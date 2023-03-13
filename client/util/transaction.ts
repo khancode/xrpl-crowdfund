@@ -22,7 +22,7 @@ async function getTransactionFee(transaction: Transaction): Promise<string> {
   const copyTx = JSON.parse(JSON.stringify(transaction))
   copyTx.Fee = `0`
   copyTx.SigningPubKey = ``
-  
+
   const preparedTx = await client.autofill(copyTx)
 
   const tx_blob = encode(preparedTx)
