@@ -4,7 +4,7 @@
   "description": "Set up an XRPL Hooks app by running one command",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "lint": "eslint ./client/**/* --ext .ts",
     "format": "npx prettier --write ./client",
     "setup": "make setup",
@@ -30,12 +30,15 @@
   "devDependencies": {
     "@tsconfig/node16": "^1.0.3",
     "@types/crypto-js": "^4.1.1",
+    "@types/jest": "^29.5.0",
     "@typescript-eslint/eslint-plugin": "^5.54.1",
     "@typescript-eslint/parser": "^5.54.1",
     "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.7.0",
     "eslint-plugin-prettier": "^4.2.1",
+    "jest": "^29.5.0",
     "prettier": "^2.8.4",
+    "ts-jest": "^29.0.5",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.5"
   }
