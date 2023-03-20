@@ -4,7 +4,7 @@ import {
   client,
   connectClient,
   disconnectClient,
-} from './client/util/xrpl-client'
+} from './client/util/xrplClient'
 
 const DEFINITIONS_JSON_PATH =
   './node_modules/ripple-binary-codec/dist/enums/definitions.json'

@@ -6,10 +6,10 @@ import { Transaction, Wallet } from 'xrpl'
 import { prepareTransactionV3 } from './util/transaction'
 
 import config from '../config.json'
-import { client, connectClient, disconnectClient } from './util/xrpl-client'
+import { client, connectClient, disconnectClient } from './util/xrplClient'
 
 const hookFilename = config.HOOK_C_FILENAME
-const HOOK_ACCOUNT = Wallet.fromSecret(config.HOOK_ACCOUNT.secret)
+const HOOK_ACCOUNT = Wallet.fromSeed(config.HOOK_ACCOUNT.seed)
 const hsfOVERRIDE = 1
 const wasm = fs.readFileSync(
   path.resolve(__dirname, `../build/${hookFilename}.wasm`)

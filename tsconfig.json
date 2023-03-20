@@ -4,6 +4,6 @@
     "resolveJsonModule": true,
     "preserveConstEnums": true
   },
-  "include": ["client/**/*", "update-definitions.ts"],
+  "include": ["client/**/*", "updateDefinitions.ts"],
   "exclude": ["node_modules", "**/*.spec.ts", ""]
 }

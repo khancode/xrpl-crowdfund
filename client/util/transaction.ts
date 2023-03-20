@@ -2,12 +2,37 @@ import { encode } from 'ripple-binary-codec'
 import { Transaction } from 'xrpl'
 import { BaseResponse } from 'xrpl/dist/npm/models/methods/baseMethod'
 
-import { client } from './xrpl-client'
+import { client } from './xrplClient'
+
+interface ServerStateRPCResult {
+  state: {
+    validated_ledger: {
+      reserve_base: number // Account Reserve fee
+      reserve_inc: number // Owner Reserve fee
+    }
+  }
+}
 
 interface FeeRPCResult {
   drops: {
     base_fee: string
   }
+}
+
+async function accountReserveFee(): Promise<number> {
+  const request = {
+    command: 'server_state',
+  }
+  const { result } = await client.request(request)
+  return (result as ServerStateRPCResult).state.validated_ledger?.reserve_base
+}
+
+async function ownerReserveFee(): Promise<number> {
+  const request = {
+    command: 'server_state',
+  }
+  const { result } = await client.request(request)
+  return (result as ServerStateRPCResult).state.validated_ledger?.reserve_inc
 }
 
 async function feeRPC(tx_blob: string): Promise<BaseResponse> {
@@ -38,4 +63,4 @@ async function prepareTransactionV3(transaction: Transaction) {
   transaction.Fee = await getTransactionFee(transaction)
 }
 
-export { prepareTransactionV3 }
+export { accountReserveFee, ownerReserveFee, prepareTransactionV3 }
