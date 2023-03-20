@@ -36,8 +36,6 @@ async function ownerReserveFee(): Promise<number> {
 }
 
 async function feeRPC(tx_blob: string): Promise<BaseResponse> {
-  console.log(`dat tx_blob`)
-  console.log(tx_blob)
   const request = {
     command: 'fee',
     tx_blob,

@@ -161,7 +161,6 @@
 ### Data Types (hexadecimal serialization)
 
 - `**uint8**` - **1-byte unsigned integer**
-- `**uint16**` - **2-byte unsigned integer (NOT USED - DELETE)**
 - `**uint32**` - **4-byte unsigned integer**
 - `**uint64**` - **8-byte unsigned integer**
 - **`uint224`** - **28-byte unsigned integer**
