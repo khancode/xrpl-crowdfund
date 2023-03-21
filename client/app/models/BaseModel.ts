@@ -74,6 +74,10 @@ export abstract class BaseModel {
         case 'model':
           length += BaseModel.getHexLength(fieldModelClass)
           break
+        case 'varModelArray':
+          throw Error(
+            "varModelArray hex length doesn't need to be computed; only its model elements only do."
+          )
         default:
           throw Error(`Unknown type: ${type}`)
       }
