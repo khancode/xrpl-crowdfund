@@ -1,7 +1,7 @@
 {
-  "name": "xrpl-hooks-app",
+  "name": "xrpl-crowdfund",
   "version": "1.0.0",
-  "description": "Set up an XRPL Hooks app by running one command",
+  "description": "A decentralized crowdfunding platform on the XRP Ledger (XRPL) using Hooks",
   "main": "index.js",
   "scripts": {
     "test": "jest",

@@ -1,11 +1,16 @@
+import { BaseModel } from '../app/models/BaseModel'
+import { Metadata } from '../app/models/types'
 import {
+  encode,
   uint8ToHex,
   uint32ToHex,
   uint64ToHex,
   uint224ToHex,
   varStringToHex,
   xrpAddressToHex,
+  lengthToHex,
 } from './encode'
+import { UInt64, UInt8, VarString, XRPAddress } from './types'
 
 describe('encode', () => {
   describe('UInt8', () => {
@@ -148,6 +153,122 @@ describe('encode', () => {
         '237239587A52354A4870653542764B4A3655674B6A515A5753666D7133713355516A4B55'
 
       expect(xrpAddressToHex(testAddress)).toBe(expectedResult)
+    })
+  })
+
+  describe('lengthToHex', () => {
+    test('1-byte length', () => {
+      const value = 1
+      const maxStringLength = 255
+      const expectedResult = '01'
+
+      expect(lengthToHex(value, maxStringLength)).toBe(expectedResult)
+    })
+
+    test('2-byte length', () => {
+      const value = 256
+      const maxStringLength = 65535
+      const expectedResult = '0100'
+
+      expect(lengthToHex(value, maxStringLength)).toBe(expectedResult)
+    })
+
+    test('exceeds maxStringLength 2-byte limit', () => {
+      const value = 65537
+      const maxStringLength = 65537
+      const errorMessage = 'maxStringLength exceeds 2 bytes'
+
+      expect(() => lengthToHex(value, maxStringLength)).toThrow(errorMessage)
+    })
+  })
+
+  describe('encode model', () => {
+    test('single field', () => {
+      const SampleModel = class extends BaseModel {
+        modeFlag: UInt8
+
+        constructor(modeFlag: UInt8) {
+          super()
+          this.modeFlag = modeFlag
+        }
+
+        getMetadata(): Metadata {
+          return [{ field: 'modeFlag', type: 'uint8' }]
+        }
+      }
+      const sample = new SampleModel(1)
+      const hex = encode(sample)
+      expect(hex).toBe('01')
+    })
+
+    test('single xrpAddress field', () => {
+      const SampleModel = class extends BaseModel {
+        owner: XRPAddress
+
+        constructor(owner: XRPAddress) {
+          super()
+          this.owner = owner
+        }
+
+        getMetadata(): Metadata {
+          return [{ field: 'owner', type: 'xrpAddress' }]
+        }
+      }
+
+      const owner = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh'
+      const sample = new SampleModel(owner)
+
+      const hex = encode(sample)
+      expect(hex).toBe(
+        '2272486239434A4157794234726A39315652576E3936446B756B47346277647479546800'
+      )
+    })
+
+    test('multiple fields', () => {
+      const SampleModel = class extends BaseModel {
+        modeFlag: UInt8
+        owner: XRPAddress
+        title: VarString
+        fundRaiseGoalInDrops: UInt64
+
+        constructor(
+          modeFlag: UInt8,
+          owner: XRPAddress,
+          title: VarString,
+          fundRaiseGoalInDrops: UInt64
+        ) {
+          super()
+          this.modeFlag = modeFlag
+          this.owner = owner
+          this.title = title
+          this.fundRaiseGoalInDrops = fundRaiseGoalInDrops
+        }
+
+        getMetadata(): Metadata {
+          return [
+            { field: 'modeFlag', type: 'uint8' },
+            { field: 'owner', type: 'xrpAddress' },
+            { field: 'title', type: 'varString', maxStringLength: 75 },
+            { field: 'fundRaiseGoalInDrops', type: 'uint64' },
+          ]
+        }
+      }
+
+      const modeFlag = 1
+      const owner = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh'
+      const title = 'test'
+      const fundRaiseGoalInDrops = BigInt('1000000000')
+
+      const sample = new SampleModel(
+        modeFlag,
+        owner,
+        title,
+        fundRaiseGoalInDrops
+      )
+      const hex = encode(sample)
+      expect(hex).toBe(
+        '012272486239434A4157794234726A39315652576E3936446B756B4734627764747954680004746573740000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003B9ACA00'
+      )
     })
   })
 })

@@ -1,5 +1,48 @@
-// Import necessary types
+import { BaseModel } from '../app/models/BaseModel'
 import { UInt8, UInt32, UInt64, UInt224, VarString, XRPAddress } from './types'
+
+export function encode<T extends BaseModel>(model: T): string {
+  const metadata = model.getMetadata()
+
+  let result = ''
+  for (const { field, type, maxStringLength } of metadata) {
+    // @ts-expect-error -- this is functional
+    const fieldValue = model[field]
+    if (fieldValue === undefined) {
+      throw Error(`Field ${field} is undefined in model`)
+    }
+    const encodedField = encodeField(fieldValue, type, maxStringLength)
+    result += encodedField
+  }
+
+  return result
+}
+
+function encodeField(
+  fieldValue: unknown,
+  type: string,
+  maxStringLength?: number
+): string {
+  switch (type) {
+    case 'uint8':
+      return uint8ToHex(fieldValue as UInt8)
+    case 'uint32':
+      return uint32ToHex(fieldValue as UInt32)
+    case 'uint64':
+      return uint64ToHex(fieldValue as UInt64)
+    case 'uint224':
+      return uint224ToHex(fieldValue as UInt224)
+    case 'varString':
+      if (maxStringLength === undefined) {
+        throw Error('maxStringLength is required for type varString')
+      }
+      return varStringToHex(fieldValue as string, maxStringLength)
+    case 'xrpAddress':
+      return xrpAddressToHex(fieldValue as XRPAddress)
+    default:
+      throw Error(`Unknown type: ${type}`)
+  }
+}
 
 export function uint8ToHex(value: UInt8): string {
   return value.toString(16).padStart(2, '0').toUpperCase()
