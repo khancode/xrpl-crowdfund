@@ -1,6 +1,5 @@
 import { XRPAddress } from '../../util/types'
-import { BaseModel } from './BaseModel'
-import { Metadata } from './types'
+import { BaseModel, Metadata } from './BaseModel'
 
 describe('BaseModel', () => {
   it('encodes and decodes a model', () => {

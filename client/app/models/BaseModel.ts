@@ -1,6 +1,11 @@
 import { encode } from '../../util/encode'
 import { decode } from '../../util/decode'
-import { Metadata } from './types'
+
+export type Metadata = Array<{
+  field: string
+  type: 'uint8' | 'uint32' | 'uint64' | 'uint224' | 'varString' | 'xrpAddress'
+  maxStringLength?: number
+}>
 
 export abstract class BaseModel {
   abstract getMetadata(): Metadata
@@ -30,7 +35,7 @@ export abstract class BaseModel {
     this: new (...args: unknown[]) => T
   ): T {
     const modelArgs = this.prototype.getMetadata().map((metadata: Metadata) => {
-      // @ts-expect-error - This is expected to be a Metadata object
+      // @ts-expect-error - this is expected to be a Metadata object
       switch (metadata.type) {
         case 'uint8':
           return 0
@@ -45,7 +50,7 @@ export abstract class BaseModel {
         case 'xrpAddress':
           return ''
         default:
-          // @ts-expect-error - This is expected to be a Metadata object
+          // @ts-expect-error - this is functionally correct
           throw Error(`Unknown type: ${metadata.type}`)
       }
     })

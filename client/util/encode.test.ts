@@ -1,5 +1,4 @@
-import { BaseModel } from '../app/models/BaseModel'
-import { Metadata } from '../app/models/types'
+import { BaseModel, Metadata } from '../app/models/BaseModel'
 import {
   encode,
   uint8ToHex,
