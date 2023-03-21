@@ -1,29 +1,42 @@
-import { BaseModel } from '../app/models/BaseModel'
+import { BaseModel, ModelClass } from '../app/models/BaseModel'
 import { lengthToHex } from './encode'
 import { UInt8, UInt32, UInt64, UInt224, VarString, XRPAddress } from './types'
 
-export function decode<T extends BaseModel>(hex: string, model: T): unknown[] {
-  const metadata = model.getMetadata()
-  const decodedFields: unknown[] = []
+export function decodeModel<T extends BaseModel>(
+  hex: string,
+  modelClass: ModelClass<T>
+): T {
+  const metadata = modelClass.prototype.getMetadata()
+  const model = new modelClass()
 
   let hexIndex = 0
-  for (const { type, maxStringLength } of metadata) {
+  let decodedField = null
+  for (const {
+    field,
+    type,
+    maxStringLength,
+    modelClass: fieldModelClass,
+  } of metadata) {
     let fieldHex = ''
     switch (type) {
       case 'uint8':
         fieldHex = hex.slice(hexIndex, hexIndex + 2)
+        decodedField = decodeField(fieldHex, type)
         hexIndex += 2
         break
       case 'uint32':
         fieldHex = hex.slice(hexIndex, hexIndex + 8)
+        decodedField = decodeField(fieldHex, type)
         hexIndex += 8
         break
       case 'uint64':
         fieldHex = hex.slice(hexIndex, hexIndex + 16)
+        decodedField = decodeField(fieldHex, type)
         hexIndex += 16
         break
       case 'uint224':
         fieldHex = hex.slice(hexIndex, hexIndex + 56)
+        decodedField = decodeField(fieldHex, type)
         hexIndex += 56
         break
       case 'varString':
@@ -33,20 +46,53 @@ export function decode<T extends BaseModel>(hex: string, model: T): unknown[] {
         const prefixLengthHex = maxStringLength <= 2 ** 8 ? 2 : 4
         const length = prefixLengthHex + maxStringLength * 2
         fieldHex = hex.slice(hexIndex, hexIndex + length)
+        decodedField = decodeField(fieldHex, type, maxStringLength)
         hexIndex += length
         break
       case 'xrpAddress':
         fieldHex = hex.slice(hexIndex, hexIndex + 72)
+        decodedField = decodeField(fieldHex, type)
         hexIndex += 72
+        break
+      case 'model':
+        if (fieldModelClass === undefined) {
+          throw Error('modelClass is required for type model')
+        }
+        const modelHexLength = BaseModel.getHexLength(fieldModelClass)
+        fieldHex = hex.slice(hexIndex, hexIndex + modelHexLength)
+        decodedField = decodeModel(hex, fieldModelClass)
+        hexIndex += modelHexLength
+        break
+      case 'varModelArray':
+        if (fieldModelClass === undefined) {
+          throw Error('modelClass is required for type varModelArray')
+        }
+        const lengthHex = hex.slice(hexIndex, hexIndex + 2)
+        const varModelArrayLength = hexToUInt8(lengthHex)
+        hexIndex += 2
+        const modelArray: (typeof fieldModelClass)[] = []
+        for (let i = 0; i < varModelArrayLength; i++) {
+          const modelHexLength = BaseModel.getHexLength(fieldModelClass)
+          fieldHex = hex.slice(hexIndex, hexIndex + modelHexLength)
+          const decodedVaModelArrayElement = decodeModel(
+            fieldHex,
+            fieldModelClass
+          )
+          modelArray.push(decodedVaModelArrayElement)
+          hexIndex += modelHexLength
+        }
+        decodedField = modelArray
         break
       default:
         throw Error(`Unknown type: ${type}`)
     }
-    const decodedField = decodeField(fieldHex, type, maxStringLength)
-    decodedFields.push(decodedField)
+
+    // Add decoded field to model
+    // @ts-expect-error - this is functionally correct
+    model[field] = decodedField
   }
 
-  return decodedFields
+  return model
 }
 
 function decodeField(
@@ -70,6 +116,10 @@ function decodeField(
       return hexToVarString(hex, maxStringLength)
     case 'xrpAddress':
       return hexToXRPAddress(hex)
+    case 'model':
+      throw Error('model type should be handled by decodeModel')
+    case 'varModelArray':
+      throw Error('varModelArray type should be handled by decodeModel')
     default:
       throw Error(`Unknown type: ${type}`)
   }

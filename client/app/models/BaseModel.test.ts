@@ -21,6 +21,6 @@ describe('BaseModel', () => {
 
     const sampleEncoded = sample.encode()
     const sampleDecoded = BaseModel.decode(sampleEncoded, SampleModel)
-    expect(sample.owner).toBe(sampleDecoded.owner)
+    expect(sampleDecoded.owner).toBe(sample.owner)
   })
 })

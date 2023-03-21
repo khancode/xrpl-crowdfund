@@ -1,59 +1,120 @@
-import { encode } from '../../util/encode'
-import { decode } from '../../util/decode'
+import { encodeModel } from '../../util/encode'
+import { decodeModel } from '../../util/decode'
 
-export type Metadata = Array<{
+export type ModelClass<T extends BaseModel> = new (...args: any[]) => T
+
+export type MetadataElement<T extends BaseModel> = {
   field: string
-  type: 'uint8' | 'uint32' | 'uint64' | 'uint224' | 'varString' | 'xrpAddress'
+  type:
+    | 'uint8'
+    | 'uint32'
+    | 'uint64'
+    | 'uint224'
+    | 'varString'
+    | 'xrpAddress'
+    | 'model'
+    | 'varModelArray'
   maxStringLength?: number
-}>
+  modelClass?: ModelClass<T>
+  maxArrayLength?: number
+}
+
+export type Metadata<T extends BaseModel = BaseModel> = MetadataElement<T>[]
 
 export abstract class BaseModel {
   abstract getMetadata(): Metadata
 
   encode(): string {
-    return encode(this)
+    return encodeModel(this)
   }
 
   static decode<T extends BaseModel>(
     hex: string,
-    modelClass: new (...args: never[]) => T
+    modelClass: ModelClass<T>
   ): T {
-    // @ts-expect-error - this is functionally correct
-    const emptyModel = modelClass.createEmpty()
-    const decodedFields = decode(hex, emptyModel)
-    const metadata = emptyModel.getMetadata()
-
-    for (let i = 0; i < metadata.length; i++) {
-      const field = metadata[i]
-      emptyModel[field.field] = decodedFields[i]
-    }
-
-    return emptyModel as T
+    return decodeModel(hex, modelClass)
   }
 
-  private static createEmpty<T extends BaseModel>(
-    this: new (...args: unknown[]) => T
-  ): T {
-    const modelArgs = this.prototype.getMetadata().map((metadata: Metadata) => {
-      // @ts-expect-error - this is expected to be a Metadata object
-      switch (metadata.type) {
+  /**
+   * Used for decoding a model
+   * @param modelClass
+   * @returns modelClass's encoded hex length
+   */
+  static getHexLength<T extends BaseModel>(modelClass: ModelClass<T>): number {
+    const metadata = modelClass.prototype.getMetadata()
+    let length = 0
+
+    for (const {
+      type,
+      maxStringLength,
+      modelClass: fieldModelClass,
+    } of metadata) {
+      switch (type) {
         case 'uint8':
-          return 0
+          length += 2
+          break
         case 'uint32':
-          return 0
+          length += 8
+          break
         case 'uint64':
-          return BigInt(0)
+          length += 16
+          break
         case 'uint224':
-          return BigInt(0)
+          length += 56
+          break
         case 'varString':
-          return ''
+          if (maxStringLength === undefined) {
+            throw Error('maxStringLength is required for type varString')
+          }
+          length += maxStringLength * 2 + (maxStringLength <= 2 ** 8 ? 2 : 4)
+          break
         case 'xrpAddress':
-          return ''
+          length += 72
+          break
+        case 'model':
+          length += BaseModel.getHexLength(fieldModelClass)
+          break
         default:
-          // @ts-expect-error - this is functionally correct
-          throw Error(`Unknown type: ${metadata.type}`)
+          throw Error(`Unknown type: ${type}`)
       }
-    })
-    return new this(...modelArgs)
+    }
+
+    return length
+  }
+
+  /**
+   * Used for decoding a model
+   * @param modelClass
+   * @returns modelClass's encoded hex length
+   */
+  private static createEmpty<T extends BaseModel>(
+    modelClass: ModelClass<T>
+  ): T {
+    const modelArgs = modelClass.prototype
+      .getMetadata()
+      .map((metadata: MetadataElement<T>) => {
+        switch (metadata.type) {
+          case 'uint8':
+            return 0
+          case 'uint32':
+            return 0
+          case 'uint64':
+            return BigInt(0)
+          case 'uint224':
+            return BigInt(0)
+          case 'varString':
+            return ''
+          case 'xrpAddress':
+            return ''
+          case 'model':
+            if (metadata.modelClass === undefined) {
+              throw Error('modelClass is required for type model')
+            }
+            return BaseModel.createEmpty(metadata.modelClass)
+          default:
+            throw Error(`Unknown type: ${metadata.type}`)
+        }
+      })
+    return new modelClass(...modelArgs)
   }
 }
