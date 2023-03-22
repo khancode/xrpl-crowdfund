@@ -1,7 +1,9 @@
 import { VarString, UInt8 } from '../../util/types'
 import {
+  DESCRIPTION_MAX_LENGTH,
   MILESTONES_MAX_LENGTH,
   MODE_CREATE_CAMPAIGN_PART_B_FLAG,
+  OVERVIEW_URL_MAX_LENGTH,
 } from '../constants'
 import { BaseModel, Metadata } from './BaseModel'
 import { MilestonePayload } from './MilestonePayload'
@@ -27,8 +29,16 @@ export class CreateCampaignPayloadPartB extends BaseModel {
   getMetadata(): Metadata {
     return [
       { field: 'modeFlag', type: 'uint8' },
-      { field: 'description', type: 'varString', maxStringLength: 2500 },
-      { field: 'overviewURL', type: 'varString', maxStringLength: 2300 },
+      {
+        field: 'description',
+        type: 'varString',
+        maxStringLength: DESCRIPTION_MAX_LENGTH,
+      },
+      {
+        field: 'overviewURL',
+        type: 'varString',
+        maxStringLength: OVERVIEW_URL_MAX_LENGTH,
+      },
       {
         field: 'milestones',
         type: 'varModelArray',

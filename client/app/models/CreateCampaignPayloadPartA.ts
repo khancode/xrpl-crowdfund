@@ -1,5 +1,8 @@
 import { VarString, UInt64, UInt32, UInt8 } from '../../util/types'
-import { MODE_CREATE_CAMPAIGN_PART_A_FLAG } from '../constants'
+import {
+  MODE_CREATE_CAMPAIGN_PART_A_FLAG,
+  TITLE_MAX_LENGTH,
+} from '../constants'
 import { BaseModel, Metadata } from './BaseModel'
 
 export class CreateCampaignPayloadPartA extends BaseModel {
@@ -26,7 +29,7 @@ export class CreateCampaignPayloadPartA extends BaseModel {
   getMetadata(): Metadata {
     return [
       { field: 'modeFlag', type: 'uint8' },
-      { field: 'title', type: 'varString', maxStringLength: 75 },
+      { field: 'title', type: 'varString', maxStringLength: TITLE_MAX_LENGTH },
       { field: 'fundRaiseGoalInDrops', type: 'uint64' },
       { field: 'fundRaiseEndDateInUnixSeconds', type: 'uint32' },
       { field: 'totalMilestones', type: 'uint8' },
