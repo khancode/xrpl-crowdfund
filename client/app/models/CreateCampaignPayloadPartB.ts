@@ -1,9 +1,10 @@
 import { VarString, UInt8 } from '../../util/types'
-import { MODE_CREATE_CAMPAIGN_PART_B_FLAG } from '../constants'
+import {
+  MILESTONES_MAX_LENGTH,
+  MODE_CREATE_CAMPAIGN_PART_B_FLAG,
+} from '../constants'
 import { BaseModel, Metadata } from './BaseModel'
 import { MilestonePayload } from './MilestonePayload'
-
-const MILESTONES_MAX_LENGTH = 10
 
 export class CreateCampaignPayloadPartB extends BaseModel {
   modeFlag: UInt8
