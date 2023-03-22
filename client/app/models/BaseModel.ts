@@ -76,7 +76,7 @@ export abstract class BaseModel {
           break
         case 'varModelArray':
           throw Error(
-            "varModelArray hex length doesn't need to be computed; only its model elements only do."
+            "varModelArray hex length doesn't need to be computed for this application; only its model elements only do. However, this will fail if getHexLength is called on a model that contains a varModelArray. Will need to be updated if this is ever needed."
           )
         default:
           throw Error(`Unknown type: ${type}`)
