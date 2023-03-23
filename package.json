@@ -4,6 +4,7 @@
   "description": "A decentralized crowdfunding platform on the XRP Ledger (XRPL) using Hooks",
   "main": "index.js",
   "scripts": {
+    "test": "npm run test:unit && npm run test:integration",
     "test:unit": "jest --config=jest.config.unit.js",
     "test:integration": "jest --config=jest.config.integration.js",
     "lint": "eslint ./client/**/* --ext .ts",
