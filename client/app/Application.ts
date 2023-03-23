@@ -48,6 +48,60 @@ export class Application {
     } = params
 
     // Step 1. Input validation
+    this._validateCreateCampaignParams(params)
+
+    // TODO: Step 2. create payloads
+
+    // TODO: Step 3. submit Payment transaction with CreateCampaignPayloadPartA
+
+    // TODO: Step 4. submit Invoke transaction with CreateCampaignPayloadPartB
+
+    // TODO: Step 5. return success/failure
+  }
+
+  static viewCampaigns() {
+    // TODO: implement
+    throw Error('Not implemented')
+  }
+
+  static fundCampaign() {
+    // TODO: implement
+    throw Error('Not implemented')
+  }
+
+  static voteRejectMilestone() {
+    // TODO: implement
+    throw Error('Not implemented')
+  }
+
+  static voteApproveMilestone() {
+    // TODO: implement
+    throw Error('Not implemented')
+  }
+
+  static requestRefundPayment() {
+    // TODO: implement
+    throw Error('Not implemented')
+  }
+
+  static requestMilestonePayoutPayment() {
+    // TODO: implement
+    throw Error('Not implemented')
+  }
+
+  private static _validateCreateCampaignParams(params: CreateCampaignParams) {
+    const {
+      ownerWallet,
+      destinationTag,
+      title,
+      description,
+      overviewURL,
+      fundRaiseGoalInDrops,
+      fundRaiseEndDateInUnixSeconds,
+      milestones,
+    } = params
+
+    // Step 1. Input validation
     if (destinationTag < 0 || destinationTag > 2 ** 32 - 1) {
       throw Error(
         `Invalid destinationTag ${destinationTag}. Must be between 0 and 2^32 - 1`
@@ -132,43 +186,5 @@ export class Application {
     ) {
       throw Error('Milestone end dates must be in ascending order')
     }
-
-    // TODO: Step 2. create payloads
-
-    // TODO: Step 3. submit Payment transaction with CreateCampaignPayloadPartA
-
-    // TODO: Step 4. submit Invoke transaction with CreateCampaignPayloadPartB
-
-    // TODO: Step 5. return success/failure
-  }
-
-  static viewCampaigns() {
-    // TODO: implement
-    throw Error('Not implemented')
-  }
-
-  static fundCampaign() {
-    // TODO: implement
-    throw Error('Not implemented')
-  }
-
-  static voteRejectMilestone() {
-    // TODO: implement
-    throw Error('Not implemented')
-  }
-
-  static voteApproveMilestone() {
-    // TODO: implement
-    throw Error('Not implemented')
-  }
-
-  static requestRefundPayment() {
-    // TODO: implement
-    throw Error('Not implemented')
-  }
-
-  static requestMilestonePayoutPayment() {
-    // TODO: implement
-    throw Error('Not implemented')
   }
 }
