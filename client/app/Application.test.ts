@@ -1,14 +1,20 @@
+import { Wallet } from 'xrpl'
 import { Application, CreateCampaignParams } from './Application'
 
 describe('Application', () => {
   describe('createCampaign', () => {
     describe('input validation', () => {
+      let ownerWallet: Wallet
       let params: CreateCampaignParams
+
+      beforeAll(() => {
+        ownerWallet = Wallet.generate()
+      })
 
       beforeEach(() => {
         params = {
+          ownerWallet,
           destinationTag: 0,
-          owner: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
           title: 'title',
           description: 'description',
           overviewURL: 'overviewURL',
@@ -49,20 +55,6 @@ describe('Application', () => {
         params.destinationTag = 2 ** 32
         expect(() => Application.createCampaign(params)).toThrow(
           'Invalid destinationTag 4294967296. Must be between 0 and 2^32 - 1'
-        )
-      })
-
-      it('should throw if owner is too short', () => {
-        params.owner = 'rHb9CJAWyB4rj91VRWn96Dku'
-        expect(() => Application.createCampaign(params)).toThrow(
-          'Invalid owner xrpAddress length 24. Must be between 25 and 35'
-        )
-      })
-
-      it('should throw if owner is too long', () => {
-        params.owner = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh1y'
-        expect(() => Application.createCampaign(params)).toThrow(
-          'Invalid owner xrpAddress length 36. Must be between 25 and 35'
         )
       })
 

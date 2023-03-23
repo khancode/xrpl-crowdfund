@@ -11,6 +11,7 @@ Here are the operations that are required by the application:
 7. Request Milestone Payout Payment
 */
 
+import { Wallet } from 'xrpl'
 import {
   CREATE_CAMPAIGN_DEPOSIT_IN_DROPS,
   DESCRIPTION_MAX_LENGTH,
@@ -20,8 +21,8 @@ import {
 } from './constants'
 
 export interface CreateCampaignParams {
+  ownerWallet: Wallet
   destinationTag: number
-  owner: string
   title: string
   description: string
   overviewURL: string
@@ -37,8 +38,8 @@ export interface CreateCampaignParams {
 export class Application {
   static createCampaign(params: CreateCampaignParams) {
     const {
+      ownerWallet,
       destinationTag,
-      owner,
       title,
       description,
       overviewURL,
@@ -51,11 +52,6 @@ export class Application {
     if (destinationTag < 0 || destinationTag > 2 ** 32 - 1) {
       throw Error(
         `Invalid destinationTag ${destinationTag}. Must be between 0 and 2^32 - 1`
-      )
-    }
-    if (owner.length < 25 || owner.length > 35) {
-      throw Error(
-        `Invalid owner xrpAddress length ${owner.length}. Must be between 25 and 35`
       )
     }
     if (title.length < 1 || title.length > TITLE_MAX_LENGTH) {
