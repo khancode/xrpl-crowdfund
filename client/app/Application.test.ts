@@ -100,17 +100,10 @@ describe('Application', () => {
         )
       })
 
-      it('should throw if fundRaiseGoalInDrops is less than create campaign deposit', () => {
-        params.fundRaiseGoalInDrops = BigInt(2000000)
-        expect(() => Application.createCampaign(params)).toThrow(
-          'Invalid fundRaiseGoalInDrops 2000000. Must be at least 1300000000 to cover the create campaign deposit'
-        )
-      })
-
-      it('should throw if fudnRaiseGoalInDrops is greater than the max value allowed', () => {
+      it('should throw if fundRaiseGoalInDrops is greater than the max value allowed', () => {
         params.fundRaiseGoalInDrops = BigInt(2 ** 64)
         expect(() => Application.createCampaign(params)).toThrow(
-          'Invalid fundRaiseGoalInDrops 18446744073709551616. Must be between 1300000000 (create campaign deposit) and 2^64 - 1'
+          'Invalid fundRaiseGoalInDrops 18446744073709551616. Must be between 1 and 2^64 - 1'
         )
       })
 

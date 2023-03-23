@@ -13,7 +13,6 @@ Here are the operations that are required by the application:
 
 import { Wallet } from 'xrpl'
 import {
-  CREATE_CAMPAIGN_DEPOSIT_IN_DROPS,
   DESCRIPTION_MAX_LENGTH,
   MILESTONES_MAX_LENGTH,
   OVERVIEW_URL_MAX_LENGTH,
@@ -72,14 +71,9 @@ export class Application {
         `Invalid overviewURL length ${overviewURL.length}. Must be between 1 and ${OVERVIEW_URL_MAX_LENGTH}`
       )
     }
-    if (fundRaiseGoalInDrops < CREATE_CAMPAIGN_DEPOSIT_IN_DROPS) {
+    if (fundRaiseGoalInDrops < 1 || fundRaiseGoalInDrops > 2n ** 64n - 1n) {
       throw Error(
-        `Invalid fundRaiseGoalInDrops ${fundRaiseGoalInDrops}. Must be at least ${CREATE_CAMPAIGN_DEPOSIT_IN_DROPS} to cover the create campaign deposit`
-      )
-    }
-    if (fundRaiseGoalInDrops > 2n ** 64n - 1n) {
-      throw Error(
-        `Invalid fundRaiseGoalInDrops ${fundRaiseGoalInDrops}. Must be between ${CREATE_CAMPAIGN_DEPOSIT_IN_DROPS} (create campaign deposit) and 2^64 - 1`
+        `Invalid fundRaiseGoalInDrops ${fundRaiseGoalInDrops}. Must be between 1 and 2^64 - 1`
       )
     }
     if (fundRaiseEndDateInUnixSeconds < Date.now() / 1000) {
