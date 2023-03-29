@@ -1,4 +1,3 @@
-import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
 import { dropsToXrp, Payment, Wallet } from 'xrpl'
@@ -11,22 +10,20 @@ import {
 } from '../util/transaction'
 
 import config from '../../config.json'
-
-const URL = `https://hooks-testnet-v3.xrpl-labs.com/accounts`
+import { fundWallet } from '../util/fundWallet'
 
 async function run() {
   await connectClient()
 
   // 1. Fund new v3 account
-  const res = await axios.post(URL)
-  const senderWallet = Wallet.fromSecret(res.data.account.secret)
+  const angelWallet = await fundWallet()
   const hookWallet = Wallet.generate()
 
   console.log(`\n1. Funded new wallet to send funds to hook wallet:`)
-  console.log(senderWallet)
+  console.log(angelWallet)
 
   console.log(
-    `\n2. Generated new hook wallet that will receive funds from senderWallet:`
+    `\n2. Generated new hook wallet that will receive funds from angelWallet:`
   )
   console.log(hookWallet)
 
@@ -35,7 +32,7 @@ async function run() {
   // 3. Get account reserve fee
   const accReserveFee = await accountReserveFee()
   const ownReserveFee = await ownerReserveFee()
-  const starterSetHookFee = 124520 // TODO: dynamically get this fee
+  const starterSetHookFee = 1300000000 // 124520 // TODO: dynamically get this fee
   const totalAmount = (
     accReserveFee +
     ownReserveFee +
@@ -47,7 +44,7 @@ async function run() {
 
   // 3. Fund hook wallet with account reserve fee - now it's on the ledger
   const tx: Payment = {
-    Account: senderWallet.address,
+    Account: angelWallet.address,
     TransactionType: `Payment`,
     Destination: hookWallet.address,
     Amount: totalAmount,
@@ -64,7 +61,7 @@ async function run() {
 
   const result = await client.submitAndWait(tx, {
     autofill: true,
-    wallet: senderWallet,
+    wallet: angelWallet,
   })
 
   console.log(`\n6. Transaction result:`)

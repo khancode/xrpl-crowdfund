@@ -1,6 +1,16 @@
 {
-  "HOOK_C_FILENAME": "starter",
+  "HOOKS": [
+    {
+      "HOOK_C_FILENAME": "crowdfund_payment",
+      "HookOn": ["Payment"]
+    },
+    {
+      "HOOK_C_FILENAME": "crowdfund_invoke",
+      "HookOn": ["Invoke"]
+    }
+  ],
   "HOOK_ACCOUNT": {
-    "seed": "snr67jzBqsqYMLAuRsMJ95DDSAzDW"
-  }
+    "seed": "sEdScXwSKgxZ5GuVVJMw4y4Je1W9avL"
+  },
+  "HOOK_NAMESPACE_SEED": "crowdfund"
 }

@@ -1,10 +1,8 @@
-.PHONY: install build
-
-HOOK_C_FILENAME := $(shell jq -r '.HOOK_C_FILENAME' config.json)
+.PHONY: install build-hooks build-one set-hooks
 
 setup: install update-definitions
 
-build-set-hook: build set-hook
+build-set-hooks: build-hooks set-hooks
 
 install:
 	npm i
@@ -14,15 +12,18 @@ install:
 update-definitions:
 	npx ts-node updateDefinitions.ts
 
-build:
+build-hooks:
 	mkdir -p build
-	wasmcc ./hook-src/$(HOOK_C_FILENAME).c -o ./build/$(HOOK_C_FILENAME).wasm  -O0 -Wl,--allow-undefined -I../
+	./build_hooks.sh
+
+build-one-hook:
+	wasmcc ./hook-src/$(HOOK_C_FILENAME).c -o ./build/$(HOOK_C_FILENAME).wasm -O0 -Wl,--allow-undefined -I../
 	./binaryen/bin/wasm-opt -O2 ./build/$(HOOK_C_FILENAME).wasm -o ./build/$(HOOK_C_FILENAME).wasm
 	./hook-cleaner-c/hook-cleaner ./build/$(HOOK_C_FILENAME).wasm
 	./xrpld-hooks/src/ripple/app/hook/guard_checker ./build/$(HOOK_C_FILENAME).wasm
 
-set-hook:
-	npx ts-node ./client/setHook.ts
+set-hooks:
+	npx ts-node ./client/setHooks.ts
 
 clean:
 	rm -rf build/*

@@ -9,13 +9,13 @@ export class CreateCampaignPayloadPartA extends BaseModel {
   modeFlag: UInt8
   title: VarString
   fundRaiseGoalInDrops: UInt64
-  fundRaiseEndDateInUnixSeconds: UInt32
+  fundRaiseEndDateInUnixSeconds: UInt64
   totalMilestones: UInt8
 
   constructor(
     title: VarString,
     fundRaiseGoalInDrops: UInt64,
-    fundRaiseEndDateInUnixSeconds: UInt32,
+    fundRaiseEndDateInUnixSeconds: UInt64,
     totalMilestones: UInt8
   ) {
     super()
@@ -31,7 +31,7 @@ export class CreateCampaignPayloadPartA extends BaseModel {
       { field: 'modeFlag', type: 'uint8' },
       { field: 'title', type: 'varString', maxStringLength: TITLE_MAX_LENGTH },
       { field: 'fundRaiseGoalInDrops', type: 'uint64' },
-      { field: 'fundRaiseEndDateInUnixSeconds', type: 'uint32' },
+      { field: 'fundRaiseEndDateInUnixSeconds', type: 'uint64' },
       { field: 'totalMilestones', type: 'uint8' },
     ]
   }

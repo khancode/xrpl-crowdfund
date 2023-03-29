@@ -19,20 +19,28 @@ describe('Application', () => {
           description: 'description',
           overviewURL: 'overviewURL',
           fundRaiseGoalInDrops: BigInt(25000000000),
-          fundRaiseEndDateInUnixSeconds: Math.floor(Date.now() / 1000) + 1000, // next month
+          fundRaiseEndDateInUnixSeconds: BigInt(
+            Math.floor(Date.now() / 1000) + 1000
+          ), // next month
           milestones: [
             {
-              endDateInUnixSeconds: Math.floor(Date.now() / 1000) + 2000, // next 2 month
+              endDateInUnixSeconds: BigInt(
+                Math.floor(Date.now() / 1000) + 2000
+              ), // next 2 month
               title: 'milestoneTitle',
               payoutPercent: 25,
             },
             {
-              endDateInUnixSeconds: Math.floor(Date.now() / 1000) + 3000, // next 3 months
+              endDateInUnixSeconds: BigInt(
+                Math.floor(Date.now() / 1000) + 3000
+              ), // next 3 months
               title: 'milestoneTitle',
               payoutPercent: 25,
             },
             {
-              endDateInUnixSeconds: Math.floor(Date.now() / 1000) + 5000, // next 5 months
+              endDateInUnixSeconds: BigInt(
+                Math.floor(Date.now() / 1000) + 5000
+              ), // next 5 months
               title: 'milestoneTitle',
               payoutPercent: 50,
             },
@@ -124,7 +132,9 @@ describe('Application', () => {
       })
 
       it('should throw if fundRaiseEndDateInUnixSeconds is less than now', () => {
-        params.fundRaiseEndDateInUnixSeconds = Math.floor(Date.now() / 1000) - 1
+        params.fundRaiseEndDateInUnixSeconds = BigInt(
+          Math.floor(Date.now() / 1000) - 1
+        )
         expect(() =>
           // @ts-expect-error - we're testing the private method
           Application._validateCreateCampaignParams(params)
@@ -134,7 +144,7 @@ describe('Application', () => {
       })
 
       it('should throw if fundRaiseEndDateInUnixSeconds is greater than the max value allowed', () => {
-        params.fundRaiseEndDateInUnixSeconds = 2 ** 32
+        params.fundRaiseEndDateInUnixSeconds = BigInt(2 ** 32)
         expect(() =>
           // @ts-expect-error - we're testing the private method
           Application._validateCreateCampaignParams(params)
@@ -164,8 +174,9 @@ describe('Application', () => {
       })
 
       it('should throw if milestone.endDateInUnixSeconds is less than now', () => {
-        params.milestones[0].endDateInUnixSeconds =
+        params.milestones[0].endDateInUnixSeconds = BigInt(
           Math.floor(Date.now() / 1000) - 1
+        )
         expect(() =>
           // @ts-expect-error - we're testing the private method
           Application._validateCreateCampaignParams(params)
@@ -175,7 +186,7 @@ describe('Application', () => {
       })
 
       it('should throw if milestone.endDateInUnixSeconds is greater than the max value allowed', () => {
-        params.milestones[0].endDateInUnixSeconds = 2 ** 32
+        params.milestones[0].endDateInUnixSeconds = BigInt(2 ** 32)
         expect(() =>
           // @ts-expect-error - we're testing the private method
           Application._validateCreateCampaignParams(params)
@@ -221,10 +232,12 @@ describe('Application', () => {
       })
 
       it('should throw if milestones are not in ascending order', () => {
-        params.milestones[0].endDateInUnixSeconds =
+        params.milestones[0].endDateInUnixSeconds = BigInt(
           Math.floor(Date.now() / 1000) + 4000
-        params.milestones[1].endDateInUnixSeconds =
+        )
+        params.milestones[1].endDateInUnixSeconds = BigInt(
           Math.floor(Date.now() / 1000) + 1000
+        )
         expect(() =>
           // @ts-expect-error - we're testing the private method
           Application._validateCreateCampaignParams(params)

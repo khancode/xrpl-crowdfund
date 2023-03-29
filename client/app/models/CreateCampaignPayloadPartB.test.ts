@@ -6,8 +6,8 @@ describe('CreateCampaignPayloadPartB', () => {
   it('encodes and decodes a model with one milestone', () => {
     const description = 'this is a brief description'
     const overviewURL = 'https://www.google.com'
-    const nextMonthDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000
+    const nextMonthDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000)
     )
     const milestones: MilestonePayload[] = [
       new MilestonePayload('only milestone', nextMonthDateInUnixSeconds, 50),
@@ -30,11 +30,11 @@ describe('CreateCampaignPayloadPartB', () => {
   it('encodes and decodes a model', () => {
     const description = 'this is a brief description'
     const overviewURL = 'https://www.google.com'
-    const nextMonthDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000
+    const nextMonthDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000)
     )
-    const next3MonthsDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000
+    const next3MonthsDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000)
     )
     const milestones: MilestonePayload[] = [
       new MilestonePayload('first milestone', nextMonthDateInUnixSeconds, 50),
@@ -59,15 +59,15 @@ describe('CreateCampaignPayloadPartB', () => {
   it('encodes and decodes a model with max milestones', () => {
     const description = 'this is a brief description'
     const overviewURL = 'https://www.google.com'
-    const nextMonthDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000
+    const nextMonthDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000)
     )
     const milestones: MilestonePayload[] = []
     for (let i = 0; i < 10; i++) {
       milestones.push(
         new MilestonePayload(
           `milestone ${i}`,
-          nextMonthDateInUnixSeconds + i * 1000,
+          nextMonthDateInUnixSeconds + BigInt(i * 1000),
           50
         )
       )
@@ -92,15 +92,15 @@ describe('CreateCampaignPayloadPartB', () => {
   it('throws error when encoding a model with too many milestones', () => {
     const description = 'this is a brief description'
     const overviewURL = 'https://www.google.com'
-    const nextMonthDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000
+    const nextMonthDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000)
     ) // 30 days from now
     const milestones: MilestonePayload[] = []
     for (let i = 0; i < 11; i++) {
       milestones.push(
         new MilestonePayload(
           `milestone ${i}`,
-          nextMonthDateInUnixSeconds + i * 1000,
+          nextMonthDateInUnixSeconds + BigInt(i * 1000),
           50
         )
       )
@@ -120,11 +120,11 @@ describe('CreateCampaignPayloadPartB', () => {
   it('encodes and decodes a model with a long description', () => {
     const description = 'a'.repeat(2500)
     const overviewURL = 'https://www.google.com'
-    const nextMonthDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000
+    const nextMonthDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000)
     )
-    const next3MonthsDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000
+    const next3MonthsDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000)
     )
     const milestones: MilestonePayload[] = [
       new MilestonePayload('first milestone', nextMonthDateInUnixSeconds, 50),
@@ -149,11 +149,11 @@ describe('CreateCampaignPayloadPartB', () => {
   it('encodes and decodes a model with a long overviewURL', () => {
     const description = 'this is a brief description'
     const overviewURL = 'a'.repeat(2300)
-    const nextMonthDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000
+    const nextMonthDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000)
     )
-    const next3MonthsDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000
+    const next3MonthsDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000)
     )
     const milestones: MilestonePayload[] = [
       new MilestonePayload('first milestone', nextMonthDateInUnixSeconds, 50),
@@ -178,11 +178,11 @@ describe('CreateCampaignPayloadPartB', () => {
   it('encodes and decodes a model with a long milestone title', () => {
     const description = 'this is a brief description'
     const overviewURL = 'https://www.google.com'
-    const nextMonthDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000
+    const nextMonthDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000)
     )
-    const next3MonthsDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000
+    const next3MonthsDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000)
     )
     const milestones: MilestonePayload[] = [
       new MilestonePayload('a'.repeat(75), nextMonthDateInUnixSeconds, 50),
@@ -207,11 +207,11 @@ describe('CreateCampaignPayloadPartB', () => {
   it('errors when description is too long', () => {
     const description = 'a'.repeat(2501)
     const overviewURL = 'https://www.google.com'
-    const nextMonthDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000
+    const nextMonthDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000)
     )
-    const next3MonthsDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000
+    const next3MonthsDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000)
     )
     const milestones: MilestonePayload[] = [
       new MilestonePayload('first milestone', nextMonthDateInUnixSeconds, 50),
@@ -230,11 +230,11 @@ describe('CreateCampaignPayloadPartB', () => {
   it('errors when overviewURL is too long', () => {
     const description = 'this is a brief description'
     const overviewURL = 'a'.repeat(2301)
-    const nextMonthDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000
+    const nextMonthDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000)
     )
-    const next3MonthsDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000
+    const next3MonthsDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000)
     )
     const milestones: MilestonePayload[] = [
       new MilestonePayload('first milestone', nextMonthDateInUnixSeconds, 50),
@@ -253,11 +253,11 @@ describe('CreateCampaignPayloadPartB', () => {
   it('errors when milestone title is too long', () => {
     const description = 'this is a brief description'
     const overviewURL = 'https://www.google.com'
-    const nextMonthDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000
+    const nextMonthDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000)
     )
-    const next3MonthsDateInUnixSeconds = Math.floor(
-      (Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000
+    const next3MonthsDateInUnixSeconds = BigInt(
+      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30 * 3) / 1000)
     )
     const milestones: MilestonePayload[] = [
       new MilestonePayload('a'.repeat(76), nextMonthDateInUnixSeconds, 50),

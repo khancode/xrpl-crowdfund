@@ -1,6 +1,8 @@
+import { SHA256 } from 'crypto-js'
 import { encode } from 'ripple-binary-codec'
 import { Transaction } from 'xrpl'
 import { BaseResponse } from 'xrpl/dist/npm/models/methods/baseMethod'
+import { UInt32 } from './types'
 
 import { client } from './xrplClient'
 
@@ -19,19 +21,24 @@ interface FeeRPCResult {
   }
 }
 
-async function accountReserveFee(): Promise<number> {
+function generateRandomDestinationTag(): UInt32 {
+  return Math.floor(Math.random() * 4294967295)
+}
+
+async function serverStateRPC(): Promise<BaseResponse> {
   const request = {
     command: 'server_state',
   }
-  const { result } = await client.request(request)
+  return await client.request(request)
+}
+
+async function accountReserveFee(): Promise<number> {
+  const { result } = await serverStateRPC()
   return (result as ServerStateRPCResult).state.validated_ledger?.reserve_base
 }
 
 async function ownerReserveFee(): Promise<number> {
-  const request = {
-    command: 'server_state',
-  }
-  const { result } = await client.request(request)
+  const { result } = await serverStateRPC()
   return (result as ServerStateRPCResult).state.validated_ledger?.reserve_inc
 }
 
@@ -63,4 +70,15 @@ async function prepareTransactionV3(transaction: Transaction) {
   transaction.Fee = await getTransactionFee(transaction)
 }
 
-export { accountReserveFee, ownerReserveFee, prepareTransactionV3 }
+function deriveHookNamespace(hookNamespaceSeed: string): string {
+  return SHA256(hookNamespaceSeed).toString().toUpperCase()
+}
+
+export {
+  accountReserveFee,
+  deriveHookNamespace,
+  generateRandomDestinationTag,
+  ownerReserveFee,
+  prepareTransactionV3,
+  serverStateRPC,
+}

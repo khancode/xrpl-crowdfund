@@ -11,13 +11,30 @@ Here are the operations that are required by the application:
 7. Request Milestone Payout Payment
 */
 
-import { Wallet } from 'xrpl'
 import {
+  AccountInfoRequest,
+  convertStringToHex,
+  Payment,
+  Request,
+  Transaction,
+  validate,
+  Wallet,
+} from 'xrpl'
+import config from '../../config.json'
+import { deriveHookNamespace, prepareTransactionV3 } from '../util/transaction'
+import { client, connectClient, disconnectClient } from '../util/xrplClient'
+import {
+  CREATE_CAMPAIGN_DEPOSIT_IN_DROPS,
   DESCRIPTION_MAX_LENGTH,
+  HOOK_ACCOUNT_WALLET,
   MILESTONES_MAX_LENGTH,
   OVERVIEW_URL_MAX_LENGTH,
   TITLE_MAX_LENGTH,
 } from './constants'
+import { CreateCampaignPayloadPartA } from './models/CreateCampaignPayloadPartA'
+import { CreateCampaignPayloadPartB } from './models/CreateCampaignPayloadPartB'
+import { HookState } from './models/HookState'
+import { MilestonePayload } from './models/MilestonePayload'
 
 export interface CreateCampaignParams {
   ownerWallet: Wallet
@@ -26,16 +43,16 @@ export interface CreateCampaignParams {
   description: string
   overviewURL: string
   fundRaiseGoalInDrops: bigint
-  fundRaiseEndDateInUnixSeconds: number
+  fundRaiseEndDateInUnixSeconds: bigint
   milestones: Array<{
-    endDateInUnixSeconds: number
+    endDateInUnixSeconds: bigint
     title: string
     payoutPercent: number
   }>
 }
 
 export class Application {
-  static createCampaign(params: CreateCampaignParams) {
+  static async createCampaign(params: CreateCampaignParams) {
     const {
       ownerWallet,
       destinationTag,
@@ -50,18 +67,160 @@ export class Application {
     // Step 1. Input validation
     this._validateCreateCampaignParams(params)
 
-    // TODO: Step 2. create payloads
+    // Step 2. Connect XRPL client
+    await connectClient()
 
-    // TODO: Step 3. submit Payment transaction with CreateCampaignPayloadPartA
+    // Step 3. Create transaction payloads
+    const createCampaignPayloadPartA = new CreateCampaignPayloadPartA(
+      title,
+      fundRaiseGoalInDrops,
+      fundRaiseEndDateInUnixSeconds,
+      milestones.length
+    )
+    const milestonePayloads = milestones.map((milestone) => {
+      return new MilestonePayload(
+        milestone.title,
+        milestone.endDateInUnixSeconds,
+        milestone.payoutPercent
+      )
+    })
+    const createCampaignPayloadPartB = new CreateCampaignPayloadPartB(
+      description,
+      overviewURL,
+      milestonePayloads
+    )
 
-    // TODO: Step 4. submit Invoke transaction with CreateCampaignPayloadPartB
+    // TODO: Step 4. submit Payment transaction with CreateCampaignPayloadPartA
+    const createCampaignPartA: Payment = {
+      TransactionType: 'Payment',
+      Account: ownerWallet.address,
+      Amount: CREATE_CAMPAIGN_DEPOSIT_IN_DROPS.toString(),
+      Destination: HOOK_ACCOUNT_WALLET.address, // TODO: replace with Hook Account address
+      DestinationTag: destinationTag,
+      Memos: [
+        {
+          Memo: {
+            MemoData: createCampaignPayloadPartA.encode(),
+            MemoFormat: convertStringToHex(`signed/payload+1`),
+            MemoType: convertStringToHex(`liteacc/payment`),
+          },
+        },
+      ],
+    }
+    const createCampaignPartB: Transaction = {
+      // @ts-expect-error - Invoke transaction type is supported in Hooks Testnet v3
+      TransactionType: 'Invoke',
+      Account: ownerWallet.address,
+      Destination: HOOK_ACCOUNT_WALLET.address, // TODO: replace with Hook Account address
+      DestinationTag: destinationTag,
+      Blob: createCampaignPayloadPartB.encode(),
+    }
 
-    // TODO: Step 5. return success/failure
+    await Promise.all([
+      prepareTransactionV3(createCampaignPartA),
+      prepareTransactionV3(createCampaignPartB),
+    ])
+
+    // Step 5. submit Payment transaction with CreateCampaignPayloadPartA
+    // @ts-expect-error - this is functional
+    validate(createCampaignPartA)
+    const paymentResponse = await client.submitAndWait(createCampaignPartA, {
+      autofill: true,
+      wallet: ownerWallet,
+    })
+    console.log('paymentResponse:')
+    console.log(paymentResponse)
+
+    // @ts-expect-error - this is defined
+    const paymentTxResult = paymentResponse?.result?.meta?.TransactionResult
+    if (paymentTxResult !== 'tesSUCCESS') {
+      throw Error(
+        `CreateCampaignPartA Payment transaction failed with ${paymentTxResult}`
+      )
+    }
+
+    // sleep for 2 seconds to ensure that the Payment transaction is confirmed
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+
+    // Step 6. submit Invoke transaction with CreateCampaignPayloadPartB
+    const invokeResponse = await client.submitAndWait(createCampaignPartB, {
+      autofill: true,
+      wallet: ownerWallet,
+    })
+    console.log('invokeResponse:')
+    console.log(invokeResponse)
+
+    // @ts-expect-error - this is defined
+    const invokeTxResult = invokeResponse?.result?.meta?.TransactionResult
+    if (invokeTxResult !== 'tesSUCCESS') {
+      throw Error(
+        `CreateCampaignPartB Invoke transaction failed with ${invokeTxResult}`
+      )
+    }
+
+    // Step 7. disconnect XRPL client
+    await disconnectClient()
+
+    // TODO: Step 8. (determine what to return or just keep it void) - return success/failure
   }
 
-  static viewCampaigns() {
-    // TODO: implement
-    throw Error('Not implemented')
+  static async viewCampaigns() {
+    // Step 1. Connect XRPL client
+    await connectClient()
+
+    // Step 2. Get HookNamespaces from Hook Account
+    const accountInfoRequest: AccountInfoRequest = {
+      command: 'account_info',
+      account: HOOK_ACCOUNT_WALLET.address,
+    }
+    const accountInfoResponse = await client.request(accountInfoRequest)
+    // @ts-expect-error - this is defined
+    const { HookNamespaces } = accountInfoResponse.result.account_data
+    if (!HookNamespaces) {
+      throw Error('No HookNamespaces found')
+    }
+
+    // Step 3. Derive HookNamespace
+    const hookNamespaceDerived = deriveHookNamespace(config.HOOK_NAMESPACE_SEED)
+    if (!HookNamespaces.includes(hookNamespaceDerived)) {
+      throw Error(`HookNamespace not found for ${hookNamespaceDerived}`)
+    }
+
+    // Step 4. Get HookState from Hook Account using HookNamespace
+    const accountNamespaceRequest: Request = {
+      // @ts-expect-error - this command exists on Hooks Testnet v3
+      command: 'account_namespace',
+      account: HOOK_ACCOUNT_WALLET.address,
+      namespace_id: hookNamespaceDerived,
+    }
+    const accountNamespaceResponse = await client.request(
+      accountNamespaceRequest
+    )
+    console.log('accountNamespaceResponse:')
+    console.log(accountNamespaceResponse)
+    // @ts-expect-error - this is defined
+    const { namespace_entries: namespaceEntries } =
+      accountNamespaceResponse.result
+    console.log('namespaceEntries:')
+    console.log(namespaceEntries)
+
+    // Step 5. Initialize HookState object
+    const hookState = new HookState(namespaceEntries)
+
+    console.log('hookState:')
+    console.log(hookState)
+
+    // TODO: Step 6. Get Campaigns from HookState
+    // hookState.entries.map((entry) => {
+    //   console.log('entry:')
+    //   console.log(entry)
+    //   const campaign = Campaign.fromHookStateEntry(entry)
+    //   console.log('campaign:')
+    //   console.log(campaign)
+    // })
+
+    // Final Step X. disconnect XRPL client
+    await disconnectClient()
   }
 
   static fundCampaign() {

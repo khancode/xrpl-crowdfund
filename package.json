@@ -10,11 +10,11 @@
     "lint": "eslint ./client/**/* --ext .ts",
     "format": "npx prettier --write ./client",
     "setup": "make setup",
-    "build:hook": "make -B build",
-    "set-hook": "make set-hook",
-    "build-set-hook": "make build-set-hook",
+    "build:hooks": "make -B build-hooks",
+    "set-hooks": "make set-hooks",
+    "build-set-hooks": "make build-set-hooks",
     "clean": "make clean",
-    "xrpl:server-state": "npx ts-node ./client/serverState",
+    "xrpl:server-state": "npx ts-node serverState",
     "app:setup-hook-account": "npx ts-node ./client/app/setupHookAccount"
   },
   "author": {
