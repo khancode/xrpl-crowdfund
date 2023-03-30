@@ -9,6 +9,8 @@ describe('Application.createCampaign', () => {
   beforeAll(async () => {
     // NOTE: Must wait 10 seconds before funding a new wallet again on Hooks Testnet v3.
     ownerWallet = await fundWallet()
+    // sleep 2 seconds to allow the wallet to be funded
+    await new Promise((resolve) => setTimeout(resolve, 2000))
   })
 
   it('should create a campaign', async () => {
