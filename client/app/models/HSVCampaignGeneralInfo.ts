@@ -1,42 +1,40 @@
-import { UInt32, UInt64, UInt8, VarString, XRPAddress } from '../../util/types'
-import { TITLE_MAX_LENGTH } from '../constants'
+import { UInt32, UInt64, UInt8, XRPAddress } from '../../util/types'
+import { MILESTONES_MAX_LENGTH } from '../constants'
 import { BaseModel, Metadata } from './BaseModel'
+import { HSVMilestone } from './HSVMilestone'
 
 export class HSVCampaignGeneralInfo extends BaseModel {
   state: UInt8
   owner: XRPAddress
-  title: VarString
   fundRaiseGoalInDrops: UInt64
   fundRaiseEndDateInUnixSeconds: UInt64
   totalAmountRaisedInDrops: UInt64
   totalAmountRewardedInDrops: UInt64
   totalReserveAmountInDrops: UInt64
-  totalMilestones: UInt8
   totalFundTransactions: UInt32
+  milestones: HSVMilestone[]
 
   constructor(
     state: UInt8,
     owner: XRPAddress,
-    title: VarString,
     fundRaiseGoalInDrops: UInt64,
     fundRaiseEndDateInUnixSeconds: UInt64,
     totalAmountRaisedInDrops: UInt64,
     totalAmountRewardedInDrops: UInt64,
     totalReserveAmountInDrops: UInt64,
-    totalMilestones: UInt8,
-    totalFundTransactions: UInt32
+    totalFundTransactions: UInt32,
+    milestones: HSVMilestone[]
   ) {
     super()
     this.state = state
     this.owner = owner
-    this.title = title
     this.fundRaiseGoalInDrops = fundRaiseGoalInDrops
     this.fundRaiseEndDateInUnixSeconds = fundRaiseEndDateInUnixSeconds
     this.totalAmountRaisedInDrops = totalAmountRaisedInDrops
     this.totalAmountRewardedInDrops = totalAmountRewardedInDrops
     this.totalReserveAmountInDrops = totalReserveAmountInDrops
-    this.totalMilestones = totalMilestones
     this.totalFundTransactions = totalFundTransactions
+    this.milestones = milestones
   }
 
   getMetadata(): Metadata<BaseModel> {
@@ -48,11 +46,6 @@ export class HSVCampaignGeneralInfo extends BaseModel {
       {
         field: 'owner',
         type: 'xrpAddress',
-      },
-      {
-        field: 'title',
-        type: 'varString',
-        maxStringLength: TITLE_MAX_LENGTH,
       },
       {
         field: 'fundRaiseGoalInDrops',
@@ -75,12 +68,14 @@ export class HSVCampaignGeneralInfo extends BaseModel {
         type: 'uint64',
       },
       {
-        field: 'totalMilestones',
-        type: 'uint8',
-      },
-      {
         field: 'totalFundTransactions',
         type: 'uint32',
+      },
+      {
+        field: 'milestones',
+        type: 'varModelArray',
+        modelClass: HSVMilestone,
+        maxArrayLength: MILESTONES_MAX_LENGTH,
       },
     ]
   }

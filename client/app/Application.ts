@@ -16,7 +16,6 @@ import {
   convertStringToHex,
   Payment,
   Request,
-  Transaction,
   validate,
   Wallet,
 } from 'xrpl'
@@ -31,8 +30,7 @@ import {
   OVERVIEW_URL_MAX_LENGTH,
   TITLE_MAX_LENGTH,
 } from './constants'
-import { CreateCampaignPayloadPartA } from './models/CreateCampaignPayloadPartA'
-import { CreateCampaignPayloadPartB } from './models/CreateCampaignPayloadPartB'
+import { CreateCampaignPayload } from './models/CreateCampaignPayload'
 import { HookState } from './models/HookState'
 import { MilestonePayload } from './models/MilestonePayload'
 
@@ -71,26 +69,19 @@ export class Application {
     await connectClient()
 
     // Step 3. Create transaction payloads
-    const createCampaignPayloadPartA = new CreateCampaignPayloadPartA(
-      title,
-      fundRaiseGoalInDrops,
-      fundRaiseEndDateInUnixSeconds,
-      milestones.length
-    )
     const milestonePayloads = milestones.map((milestone) => {
       return new MilestonePayload(
-        milestone.title,
         milestone.endDateInUnixSeconds,
         milestone.payoutPercent
       )
     })
-    const createCampaignPayloadPartB = new CreateCampaignPayloadPartB(
-      description,
-      overviewURL,
+    const createCampaignPayload = new CreateCampaignPayload(
+      fundRaiseGoalInDrops,
+      fundRaiseEndDateInUnixSeconds,
       milestonePayloads
     )
 
-    // TODO: Step 4. submit Payment transaction with CreateCampaignPayloadPartA
+    // Step 4. submit Payment transaction with CreateCampaignPayload
     const createCampaignPartA: Payment = {
       TransactionType: 'Payment',
       Account: ownerWallet.address,
@@ -100,28 +91,17 @@ export class Application {
       Memos: [
         {
           Memo: {
-            MemoData: createCampaignPayloadPartA.encode(),
+            MemoData: createCampaignPayload.encode(),
             MemoFormat: convertStringToHex(`signed/payload+1`),
             MemoType: convertStringToHex(`liteacc/payment`),
           },
         },
       ],
     }
-    const createCampaignPartB: Transaction = {
-      // @ts-expect-error - Invoke transaction type is supported in Hooks Testnet v3
-      TransactionType: 'Invoke',
-      Account: ownerWallet.address,
-      Destination: HOOK_ACCOUNT_WALLET.address, // TODO: replace with Hook Account address
-      DestinationTag: destinationTag,
-      Blob: createCampaignPayloadPartB.encode(),
-    }
 
-    await Promise.all([
-      prepareTransactionV3(createCampaignPartA),
-      prepareTransactionV3(createCampaignPartB),
-    ])
+    await prepareTransactionV3(createCampaignPartA)
 
-    // Step 5. submit Payment transaction with CreateCampaignPayloadPartA
+    // Step 5. submit Payment transaction with CreateCampaignPayload
     // @ts-expect-error - this is functional
     validate(createCampaignPartA)
     const paymentResponse = await client.submitAndWait(createCampaignPartA, {
@@ -139,24 +119,7 @@ export class Application {
       )
     }
 
-    // sleep for 2 seconds to ensure that the Payment transaction is confirmed
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-
-    // Step 6. submit Invoke transaction with CreateCampaignPayloadPartB
-    const invokeResponse = await client.submitAndWait(createCampaignPartB, {
-      autofill: true,
-      wallet: ownerWallet,
-    })
-    console.log('invokeResponse:')
-    console.log(invokeResponse)
-
-    // @ts-expect-error - this is defined
-    const invokeTxResult = invokeResponse?.result?.meta?.TransactionResult
-    if (invokeTxResult !== 'tesSUCCESS') {
-      throw Error(
-        `CreateCampaignPartB Invoke transaction failed with ${invokeTxResult}`
-      )
-    }
+    // TODO: Step 6. Add title(campaign & milestones), description, overviewURL fields to an off-ledger database (e.g. MongoDB)
 
     // Step 7. disconnect XRPL client
     await disconnectClient()
@@ -211,13 +174,16 @@ export class Application {
     console.log(hookState)
 
     // TODO: Step 6. Get Campaigns from HookState
-    // hookState.entries.map((entry) => {
-    //   console.log('entry:')
-    //   console.log(entry)
-    //   const campaign = Campaign.fromHookStateEntry(entry)
-    //   console.log('campaign:')
-    //   console.log(campaign)
-    // })
+    hookState.entries.map((entry) => {
+      console.log('entry:')
+      console.log(entry)
+      console.log('entry.value.decoded.milestones:')
+      // @ts-expect-error - milestones field exists
+      console.log(entry.value.decoded.milestones)
+      // const campaign = Campaign.fromHookStateEntry(entry)
+      // console.log('campaign:')
+      // console.log(campaign)
+    })
 
     // Final Step X. disconnect XRPL client
     await disconnectClient()

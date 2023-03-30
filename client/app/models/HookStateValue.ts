@@ -1,14 +1,8 @@
 import { UInt224 } from '../../util/types'
 import {
-  DATA_LOOKUP_DESCRIPTION_FRAGMENT_END_INDEX_FLAG,
-  DATA_LOOKUP_DESCRIPTION_FRAGMENT_START_INDEX_FLAG,
   DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_END_INDEX_FLAG,
   DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG,
   DATA_LOOKUP_GENERAL_INFO_FLAG,
-  DATA_LOOKUP_MILESTONES_PAGE_END_INDEX_FLAG,
-  DATA_LOOKUP_MILESTONES_PAGE_START_INDEX_FLAG,
-  DATA_LOOKUP_OVERVIEW_URL_FRAGMENT_END_INDEX_FLAG,
-  DATA_LOOKUP_OVERVIEW_URL_FRAGMENT_START_INDEX_FLAG,
 } from '../constants'
 import { BaseModel } from './BaseModel'
 import { HSVCampaignGeneralInfo } from './HSVCampaignGeneralInfo'
@@ -32,21 +26,6 @@ export class HookStateValue<T extends BaseModel> {
         dataLookupFlag,
         BaseModel.decode(valueEncoded, HSVCampaignGeneralInfo)
       )
-    } else if (
-      dataLookupFlag >= DATA_LOOKUP_DESCRIPTION_FRAGMENT_START_INDEX_FLAG &&
-      dataLookupFlag <= DATA_LOOKUP_DESCRIPTION_FRAGMENT_END_INDEX_FLAG
-    ) {
-      throw new Error('Description Fragment not implemented')
-    } else if (
-      dataLookupFlag >= DATA_LOOKUP_OVERVIEW_URL_FRAGMENT_START_INDEX_FLAG &&
-      dataLookupFlag <= DATA_LOOKUP_OVERVIEW_URL_FRAGMENT_END_INDEX_FLAG
-    ) {
-      throw new Error('Overview URL Fragment not implemented')
-    } else if (
-      dataLookupFlag >= DATA_LOOKUP_MILESTONES_PAGE_START_INDEX_FLAG &&
-      dataLookupFlag <= DATA_LOOKUP_MILESTONES_PAGE_END_INDEX_FLAG
-    ) {
-      throw new Error('Milestones Page not implemented')
     } else if (
       dataLookupFlag >= DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG &&
       dataLookupFlag <= DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_END_INDEX_FLAG
