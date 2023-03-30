@@ -241,10 +241,7 @@ int64_t hook(uint32_t reserved) {
         /* Step 8. Skip totalFundTransactions */
         general_info_index += 4;
 
-        TRACESTR("general_info_index should be at 81 at this point");
-        TRACEVAR(general_info_index);
-
-        /* TODO: Step 9. Write milestones to General Info Buffer */
+        /* Step 9. Write milestones to General Info Buffer */
         general_info_buffer[general_info_index++] = milestones_len;
         uint8_t* milestones_iterator = milestones;
         for (int i = 0; GUARD(MILESTONES_MAX_LENGTH), i < milestones_len; i++) {
@@ -263,24 +260,11 @@ int64_t hook(uint32_t reserved) {
 
             /* Step 9.4. Skip milestone.refundVotes */
             general_info_index += 4;
-
-            if (i == 0) {
-              TRACESTR("general_info_index should be at 96 at this point");
-              TRACEVAR(general_info_index);
-            } else if (i == 1) {
-              TRACESTR("general_info_index should be at 110 at this point");
-              TRACEVAR(general_info_index);
-            } else if (i == 2) {
-              TRACESTR("general_info_index should be at 124 at this point");
-              TRACEVAR(general_info_index);
-            }
         }
 
         /* Step 10. Verify General Info Buffer was filled correctly */
         uint8_t expected_general_info_bytes = GENERAL_INFO_MAX_BYTES - ((MILESTONES_MAX_LENGTH - milestones_len) * MILESTONE_BYTES);
-        TRACEVAR(expected_general_info_bytes);
         if (general_info_index != expected_general_info_bytes) {
-            TRACEVAR(general_info_index);
             rollback(SBUF("general_info_buffer was not filled correctly."), 400);
         }
 
