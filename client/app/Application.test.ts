@@ -14,7 +14,7 @@ describe('Application', () => {
       beforeEach(() => {
         params = {
           ownerWallet,
-          destinationTag: 0,
+          campaignId: 0,
           title: 'title',
           description: 'description',
           overviewURL: 'overviewURL',
@@ -55,21 +55,21 @@ describe('Application', () => {
         ).not.toThrow()
       })
 
-      it('should throw if destinationTag is negative', () => {
-        params.destinationTag = -1
+      it('should throw if campaignId is negative', () => {
+        params.campaignId = -1
         expect(() =>
           // @ts-expect-error - we're testing the private method
           Application._validateCreateCampaignParams(params)
-        ).toThrow('Invalid destinationTag -1. Must be between 0 and 2^32 - 1')
+        ).toThrow('Invalid campaignId -1. Must be between 0 and 2^32 - 1')
       })
 
-      it('should throw if destinationTag is greater than 2^32 - 1', () => {
-        params.destinationTag = 2 ** 32
+      it('should throw if campaignId is greater than 2^32 - 1', () => {
+        params.campaignId = 2 ** 32
         expect(() =>
           // @ts-expect-error - we're testing the private method
           Application._validateCreateCampaignParams(params)
         ).toThrow(
-          'Invalid destinationTag 4294967296. Must be between 0 and 2^32 - 1'
+          'Invalid campaignId 4294967296. Must be between 0 and 2^32 - 1'
         )
       })
 

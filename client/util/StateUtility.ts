@@ -112,6 +112,8 @@ export class StateUtility {
         dataLookupFlag === DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_END_INDEX_FLAG
       ) {
         throw Error('Fund Transactions not supported yet')
+      } else {
+        throw Error(`Invalid dataLookupFlag: ${dataLookupFlag}`)
       }
     }
 

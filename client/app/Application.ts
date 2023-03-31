@@ -28,7 +28,7 @@ import { MilestonePayload } from './models/MilestonePayload'
 
 export interface CreateCampaignParams {
   ownerWallet: Wallet
-  destinationTag: number
+  campaignId: number
   title: string
   description: string
   overviewURL: string
@@ -45,7 +45,7 @@ export class Application {
   static async createCampaign(params: CreateCampaignParams) {
     const {
       ownerWallet,
-      destinationTag,
+      campaignId,
       title,
       description,
       overviewURL,
@@ -79,7 +79,7 @@ export class Application {
       Account: ownerWallet.address,
       Amount: CREATE_CAMPAIGN_DEPOSIT_IN_DROPS.toString(),
       Destination: HOOK_ACCOUNT_WALLET.address, // TODO: replace with Hook Account address
-      DestinationTag: destinationTag,
+      DestinationTag: campaignId,
       Memos: [
         {
           Memo: {
@@ -150,7 +150,7 @@ export class Application {
   private static _validateCreateCampaignParams(params: CreateCampaignParams) {
     const {
       ownerWallet,
-      destinationTag,
+      campaignId,
       title,
       description,
       overviewURL,
@@ -160,9 +160,9 @@ export class Application {
     } = params
 
     // Step 1. Input validation
-    if (destinationTag < 0 || destinationTag > 2 ** 32 - 1) {
+    if (campaignId < 0 || campaignId > 2 ** 32 - 1) {
       throw Error(
-        `Invalid destinationTag ${destinationTag}. Must be between 0 and 2^32 - 1`
+        `Invalid campaignId ${campaignId}. Must be between 0 and 2^32 - 1`
       )
     }
     if (title.length < 1 || title.length > TITLE_MAX_LENGTH) {
