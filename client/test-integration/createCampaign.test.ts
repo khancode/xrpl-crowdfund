@@ -14,6 +14,8 @@ describe('Application.createCampaign', () => {
   })
 
   it('should create a campaign', async () => {
+    const beforeCampaigns = await Application.viewCampaigns()
+
     const destinationTag = generateRandomDestinationTag()
     const title =
       'title ioasej pf asiopefja sjeopfjopaisjef aoipsj eofjasoej fopas ejofjaos i'
@@ -53,11 +55,20 @@ describe('Application.createCampaign', () => {
       milestones,
     })
 
-    expect(true).toBe(true)
+    const afterCampaigns = await Application.viewCampaigns()
+    const campaignCreated = afterCampaigns.find(
+      (campaign) => campaign.id === destinationTag
+    )
 
-    // expect(result).toEqual({
-    //   success: true,
-    //   campaignId: '1',
-    // })
+    expect(afterCampaigns.length).toBe(beforeCampaigns.length + 1)
+    expect(campaignCreated).toBeDefined()
+    expect(campaignCreated?.id).toBe(destinationTag)
+    expect(campaignCreated?.fundRaiseGoalInDrops).toBe(fundRaiseGoalInDrops)
+    expect(campaignCreated?.fundRaiseEndDateInUnixSeconds).toBe(
+      fundRaiseEndDateInUnixSeconds
+    )
+    expect(campaignCreated?.milestones.length).toBe(milestones.length)
+    expect(campaignCreated?.fundTransactions.length).toBe(0)
+    expect(campaignCreated?.backers.length).toBe(0)
   })
 })

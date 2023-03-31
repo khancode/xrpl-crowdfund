@@ -1,10 +1,11 @@
+import { CampaignState } from '../constants'
 import { Backer } from './Backer'
 import { FundTransaction } from './FundTransaction'
 import { Milestone } from './Milestone'
 
 export class Campaign {
-  destinationTag: number
-  state: number // TODO - define possible states
+  id: number // represents destinationTag
+  state: CampaignState
   owner: string // XRP address
   title: string // Max length 75 utf-8 characters
   description: string // Max length 2,500 utf-8 characters
@@ -19,8 +20,8 @@ export class Campaign {
   backers: Backer[]
 
   constructor(
-    destinationTag: number,
-    state: number,
+    id: number,
+    state: CampaignState,
     owner: string,
     title: string,
     description: string,
@@ -34,7 +35,7 @@ export class Campaign {
     fundTransactions: FundTransaction[],
     backers: Backer[]
   ) {
-    this.destinationTag = destinationTag
+    this.id = id
     this.state = state
     this.owner = owner
     this.title = title

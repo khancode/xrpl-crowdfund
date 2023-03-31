@@ -1,7 +1,23 @@
+import { MilestoneState } from '../constants'
+
 export class Milestone {
-  state: number // TODO - define possible states
-  endDateInUnixSeconds: BigInt
+  state: MilestoneState
+  endDateInUnixSeconds: bigint
   payoutPercent: number
   rejectVotes: number
-  title: string // Max length 75 utf-8 characters
+  title: string
+
+  constructor(
+    state: MilestoneState,
+    endDateInUnixSeconds: bigint,
+    payoutPercent: number,
+    rejectVotes: number,
+    title: string
+  ) {
+    this.state = state
+    this.endDateInUnixSeconds = endDateInUnixSeconds
+    this.payoutPercent = payoutPercent
+    this.rejectVotes = rejectVotes
+    this.title = title
+  }
 }

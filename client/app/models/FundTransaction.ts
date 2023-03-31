@@ -1,13 +1,15 @@
+import { FundTransactionState } from '../constants'
+
 export class FundTransaction {
   id: number
   account: string // XRP address
-  state: number // TODO - define possible states
+  state: FundTransactionState
   amountInDrops: bigint // Use BigInt to support 64-bit unsigned integer values
 
   constructor(
     id: number,
     account: string,
-    state: number,
+    state: FundTransactionState,
     amountInDrops: bigint
   ) {
     this.id = id

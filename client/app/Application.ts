@@ -11,16 +11,9 @@ Here are the operations that are required by the application:
 7. Request Milestone Payout Payment
 */
 
-import {
-  AccountInfoRequest,
-  convertStringToHex,
-  Payment,
-  Request,
-  validate,
-  Wallet,
-} from 'xrpl'
-import config from '../../config.json'
-import { deriveHookNamespace, prepareTransactionV3 } from '../util/transaction'
+import { convertStringToHex, Payment, validate, Wallet } from 'xrpl'
+import { StateUtility } from '../util/StateUtility'
+import { prepareTransactionV3 } from '../util/transaction'
 import { client, connectClient, disconnectClient } from '../util/xrplClient'
 import {
   CREATE_CAMPAIGN_DEPOSIT_IN_DROPS,
@@ -31,7 +24,6 @@ import {
   TITLE_MAX_LENGTH,
 } from './constants'
 import { CreateCampaignPayload } from './models/CreateCampaignPayload'
-import { HookState } from './models/HookState'
 import { MilestonePayload } from './models/MilestonePayload'
 
 export interface CreateCampaignParams {
@@ -108,8 +100,6 @@ export class Application {
       autofill: true,
       wallet: ownerWallet,
     })
-    console.log('paymentResponse:')
-    console.log(paymentResponse)
 
     // @ts-expect-error - this is defined
     const paymentTxResult = paymentResponse?.result?.meta?.TransactionResult
@@ -128,65 +118,8 @@ export class Application {
   }
 
   static async viewCampaigns() {
-    // Step 1. Connect XRPL client
-    await connectClient()
-
-    // Step 2. Get HookNamespaces from Hook Account
-    const accountInfoRequest: AccountInfoRequest = {
-      command: 'account_info',
-      account: HOOK_ACCOUNT_WALLET.address,
-    }
-    const accountInfoResponse = await client.request(accountInfoRequest)
-    // @ts-expect-error - this is defined
-    const { HookNamespaces } = accountInfoResponse.result.account_data
-    if (!HookNamespaces) {
-      throw Error('No HookNamespaces found')
-    }
-
-    // Step 3. Derive HookNamespace
-    const hookNamespaceDerived = deriveHookNamespace(config.HOOK_NAMESPACE_SEED)
-    if (!HookNamespaces.includes(hookNamespaceDerived)) {
-      throw Error(`HookNamespace not found for ${hookNamespaceDerived}`)
-    }
-
-    // Step 4. Get HookState from Hook Account using HookNamespace
-    const accountNamespaceRequest: Request = {
-      // @ts-expect-error - this command exists on Hooks Testnet v3
-      command: 'account_namespace',
-      account: HOOK_ACCOUNT_WALLET.address,
-      namespace_id: hookNamespaceDerived,
-    }
-    const accountNamespaceResponse = await client.request(
-      accountNamespaceRequest
-    )
-    console.log('accountNamespaceResponse:')
-    console.log(accountNamespaceResponse)
-    // @ts-expect-error - this is defined
-    const { namespace_entries: namespaceEntries } =
-      accountNamespaceResponse.result
-    console.log('namespaceEntries:')
-    console.log(namespaceEntries)
-
-    // Step 5. Initialize HookState object
-    const hookState = new HookState(namespaceEntries)
-
-    console.log('hookState:')
-    console.log(hookState)
-
-    // TODO: Step 6. Get Campaigns from HookState
-    hookState.entries.map((entry) => {
-      console.log('entry:')
-      console.log(entry)
-      console.log('entry.value.decoded.milestones:')
-      // @ts-expect-error - milestones field exists
-      console.log(entry.value.decoded.milestones)
-      // const campaign = Campaign.fromHookStateEntry(entry)
-      // console.log('campaign:')
-      // console.log(campaign)
-    })
-
-    // Final Step X. disconnect XRPL client
-    await disconnectClient()
+    const applicationState = await StateUtility.getApplicationState()
+    return applicationState.campaigns
   }
 
   static fundCampaign() {

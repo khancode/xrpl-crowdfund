@@ -5,19 +5,19 @@ export class HSVMilestone extends BaseModel {
   state: UInt8
   endDateInUnixSeconds: UInt64
   payoutPercent: UInt8
-  refundVotes: UInt32
+  rejectVotes: UInt32
 
   constructor(
     state: UInt8,
     endDateInUnixSeconds: UInt64,
     payoutPercent: UInt8,
-    refundVotes: UInt32
+    rejectVotes: UInt32
   ) {
     super()
     this.state = state
     this.endDateInUnixSeconds = endDateInUnixSeconds
     this.payoutPercent = payoutPercent
-    this.refundVotes = refundVotes
+    this.rejectVotes = rejectVotes
   }
 
   getMetadata(): Metadata {
@@ -25,7 +25,7 @@ export class HSVMilestone extends BaseModel {
       { field: 'state', type: 'uint8' },
       { field: 'endDateInUnixSeconds', type: 'uint64' },
       { field: 'payoutPercent', type: 'uint8' },
-      { field: 'refundVotes', type: 'uint32' },
+      { field: 'rejectVotes', type: 'uint32' },
     ]
   }
 }

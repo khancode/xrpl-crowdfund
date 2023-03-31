@@ -77,8 +77,7 @@ int64_t hook(uint32_t reserved) {
     TRACEVAR(mode_flag);
 
     if (mode_flag == MODE_CREATE_CAMPAIGN_FLAG) {
-        // TODO: implement
-        TRACESTR("Mode: Create Campaign Part A");
+        TRACESTR("Mode: Create Campaign");
 
         /***** Validate/Parse Fields Steps *****/
         /* Step 1. Amount - Check if Amount is at least the minimum deposit for creating a campaign */
@@ -231,14 +230,14 @@ int64_t hook(uint32_t reserved) {
         UINT64_TO_BUF(general_info_buffer + general_info_index, fund_raise_end_date_in_unix_seconds);
         general_info_index += 8;
 
-        /* Step 6. Skip totalAmountRaisedInDrops and totalAmountRewardedInDrops */
+        /* Step 6. totalAmountRaisedInDrops and totalAmountRewardedInDrops - already set to zero so skip them */
         general_info_index += 16;
 
         /* Step 7. Write totalReserveAmountInDrops to General Info Buffer */
         UINT64_TO_BUF(general_info_buffer + general_info_index, otxn_drops);
         general_info_index += 8;
 
-        /* Step 8. Skip totalFundTransactions */
+        /* Step 8. totalFundTransactions - already set to zero so skip it */
         general_info_index += 4;
 
         /* Step 9. Write milestones to General Info Buffer */
@@ -258,7 +257,7 @@ int64_t hook(uint32_t reserved) {
             uint8_t milestone_payout_percent = *milestones_iterator++;
             general_info_buffer[general_info_index++] = milestone_payout_percent;
 
-            /* Step 9.4. Skip milestone.refundVotes */
+            /* Step 9.4. milestone.rejectVotes - already set to zero so skip it */
             general_info_index += 4;
         }
 
