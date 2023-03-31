@@ -16,7 +16,7 @@ describe('Application.createCampaign', () => {
   it('should create a campaign', async () => {
     const beforeCampaigns = await Application.viewCampaigns()
 
-    const destinationTag = generateRandomDestinationTag()
+    const campaignId = generateRandomDestinationTag()
     const title =
       'title ioasej pf asiopefja sjeopfjopaisjef aoipsj eofjasoej fopas ejofjaos i'
     const description =
@@ -46,7 +46,7 @@ describe('Application.createCampaign', () => {
 
     const result = await Application.createCampaign({
       ownerWallet,
-      destinationTag,
+      campaignId,
       title,
       description,
       overviewURL,
@@ -57,12 +57,12 @@ describe('Application.createCampaign', () => {
 
     const afterCampaigns = await Application.viewCampaigns()
     const campaignCreated = afterCampaigns.find(
-      (campaign) => campaign.id === destinationTag
+      (campaign) => campaign.id === campaignId
     )
 
     expect(afterCampaigns.length).toBe(beforeCampaigns.length + 1)
     expect(campaignCreated).toBeDefined()
-    expect(campaignCreated?.id).toBe(destinationTag)
+    expect(campaignCreated?.id).toBe(campaignId)
     expect(campaignCreated?.fundRaiseGoalInDrops).toBe(fundRaiseGoalInDrops)
     expect(campaignCreated?.fundRaiseEndDateInUnixSeconds).toBe(
       fundRaiseEndDateInUnixSeconds

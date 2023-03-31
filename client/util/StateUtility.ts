@@ -66,7 +66,18 @@ export class StateUtility {
   }
 
   static async getApplicationState(): Promise<ApplicationState> {
-    const hookState = await StateUtility.getHookState()
+    let hookState
+    try {
+      hookState = await StateUtility.getHookState()
+    } catch (error: Error | any) {
+      if (
+        error?.message === 'No HookNamespaces found' ||
+        error?.message.includes('HookNamespace not found for')
+      ) {
+        return new ApplicationState([]) // Return empty state
+      }
+      throw error
+    }
 
     const campaigns: Campaign[] = []
     for (const entry of hookState.entries) {
