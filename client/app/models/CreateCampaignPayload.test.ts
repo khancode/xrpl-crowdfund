@@ -4,18 +4,35 @@ import { MilestonePayload } from './MilestonePayload'
 
 describe('CreateCampaignPayload', () => {
   it('encodes and decodes a model', () => {
-    const fundRaiseGoalInDrops = BigInt(1000000000000000000)
-    const nextMonthDateInUnixSeconds = BigInt(
-      Math.floor((Date.now() + 1000 * 60 * 60 * 24 * 30) / 1000)
+    // init end dates in unix seconds
+    const now = new Date()
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    const next2Months = new Date(now.getFullYear(), now.getMonth() + 2, 1)
+    const next3Months = new Date(now.getFullYear(), now.getMonth() + 3, 1)
+    const next5Months = new Date(now.getFullYear(), now.getMonth() + 5, 1)
+    const nextMonthInUnixSeconds = BigInt(
+      Math.floor(nextMonth.getTime() / 1000)
     )
+    const next2MonthsInUnixSeconds = BigInt(
+      Math.floor(next2Months.getTime() / 1000)
+    )
+    const next3MonthsInUnixSeconds = BigInt(
+      Math.floor(next3Months.getTime() / 1000)
+    )
+    const next5MonthsInUnixSeconds = BigInt(
+      Math.floor(next5Months.getTime() / 1000)
+    )
+
+    const fundRaiseGoalInDrops = BigInt(1000000000000000000)
+    const fundRaiseEndDateInUnixSeconds = nextMonthInUnixSeconds
     const milestones: MilestonePayload[] = [
-      new MilestonePayload(BigInt(Math.floor(Date.now() / 1000) + 2000), 25), // next 2 months
-      new MilestonePayload(BigInt(Math.floor(Date.now() / 1000) + 3000), 25), // next 3 months
-      new MilestonePayload(BigInt(Math.floor(Date.now() / 1000) + 5000), 50), // next 5 months
+      new MilestonePayload(next2MonthsInUnixSeconds, 25),
+      new MilestonePayload(next3MonthsInUnixSeconds, 25),
+      new MilestonePayload(next5MonthsInUnixSeconds, 50),
     ]
     const payload = new CreateCampaignPayload(
       fundRaiseGoalInDrops,
-      nextMonthDateInUnixSeconds,
+      fundRaiseEndDateInUnixSeconds,
       milestones
     )
 

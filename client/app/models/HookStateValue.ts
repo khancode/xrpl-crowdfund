@@ -6,6 +6,7 @@ import {
 } from '../constants'
 import { BaseModel } from './BaseModel'
 import { HSVCampaignGeneralInfo } from './HSVCampaignGeneralInfo'
+import { HSVFundTransactionsPage } from './HSVFundTransactionsPage'
 
 export class HookStateValue<T extends BaseModel> {
   dataLookupFlag: UInt224
@@ -30,7 +31,11 @@ export class HookStateValue<T extends BaseModel> {
       dataLookupFlag >= DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG &&
       dataLookupFlag <= DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_END_INDEX_FLAG
     ) {
-      throw new Error('Fund Transactions Page not implemented')
+      // @ts-expect-error - TS doesn't know that HSVFundTransactionsPage extends BaseModel
+      return new HookStateValue(
+        dataLookupFlag,
+        BaseModel.decode(valueEncoded, HSVFundTransactionsPage)
+      )
     } else {
       throw new Error(`Invalid dataLookupFlag: ${dataLookupFlag}`)
     }

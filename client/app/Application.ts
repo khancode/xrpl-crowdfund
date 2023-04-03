@@ -11,24 +11,29 @@ Here are the operations that are required by the application:
 7. Request Milestone Payout Payment
 */
 
-import { convertStringToHex, Payment, validate, Wallet } from 'xrpl'
+import { Client, convertStringToHex, Payment, validate, Wallet } from 'xrpl'
 import { StateUtility } from '../util/StateUtility'
-import { prepareTransactionV3 } from '../util/transaction'
-import { client, connectClient, disconnectClient } from '../util/xrplClient'
+import {
+  generateRandomDestinationTag,
+  prepareTransactionV3,
+} from '../util/transaction'
 import {
   CREATE_CAMPAIGN_DEPOSIT_IN_DROPS,
   DESCRIPTION_MAX_LENGTH,
+  FUND_CAMPAIGN_DEPOSIT_IN_DROPS,
   HOOK_ACCOUNT_WALLET,
   MILESTONES_MAX_LENGTH,
   OVERVIEW_URL_MAX_LENGTH,
   TITLE_MAX_LENGTH,
 } from './constants'
 import { CreateCampaignPayload } from './models/CreateCampaignPayload'
+import { FundCampaignPayload } from './models/FundCampaignPayload'
 import { MilestonePayload } from './models/MilestonePayload'
+import { Campaign } from './models/Campaign'
 
 export interface CreateCampaignParams {
   ownerWallet: Wallet
-  campaignId: number
+  depositInDrops: bigint
   title: string
   description: string
   overviewURL: string
@@ -41,11 +46,32 @@ export interface CreateCampaignParams {
   }>
 }
 
+export interface FundCampaignParams {
+  backerWallet: Wallet
+  campaignId: number
+  fundAmountInDrops: bigint
+}
+
 export class Application {
-  static async createCampaign(params: CreateCampaignParams) {
+  static getCreateCampaignDepositInDrops(): bigint {
+    return CREATE_CAMPAIGN_DEPOSIT_IN_DROPS
+  }
+
+  static getFundCampaignDepositInDrops(): bigint {
+    return FUND_CAMPAIGN_DEPOSIT_IN_DROPS
+  }
+
+  static async createCampaign(
+    client: Client,
+    params: CreateCampaignParams
+  ): Promise<number> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
+
     const {
       ownerWallet,
-      campaignId,
+      depositInDrops,
       title,
       description,
       overviewURL,
@@ -57,8 +83,14 @@ export class Application {
     // Step 1. Input validation
     this._validateCreateCampaignParams(params)
 
-    // Step 2. Connect XRPL client
-    await connectClient()
+    // Step 3. Generate a random unique campaign ID
+    const campaigns = await Application.viewCampaigns(client)
+    let destinationTag: number
+    do {
+      destinationTag = generateRandomDestinationTag()
+    } while (campaigns.find((campaign) => campaign.id === destinationTag))
+
+    const campaignId = destinationTag
 
     // Step 3. Create transaction payloads
     const milestonePayloads = milestones.map((milestone) => {
@@ -77,7 +109,7 @@ export class Application {
     const createCampaignPartA: Payment = {
       TransactionType: 'Payment',
       Account: ownerWallet.address,
-      Amount: CREATE_CAMPAIGN_DEPOSIT_IN_DROPS.toString(),
+      Amount: depositInDrops.toString(),
       Destination: HOOK_ACCOUNT_WALLET.address, // TODO: replace with Hook Account address
       DestinationTag: campaignId,
       Memos: [
@@ -111,38 +143,99 @@ export class Application {
 
     // TODO: Step 6. Add title(campaign & milestones), description, overviewURL fields to an off-ledger database (e.g. MongoDB)
 
-    // Step 7. disconnect XRPL client
-    await disconnectClient()
-
-    // TODO: Step 8. (determine what to return or just keep it void) - return success/failure
+    return campaignId
   }
 
-  static async viewCampaigns() {
-    const applicationState = await StateUtility.getApplicationState()
+  static async viewCampaigns(client: Client): Promise<Campaign[]> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
+
+    const applicationState = await StateUtility.getApplicationState(client)
     return applicationState.campaigns
   }
 
-  static fundCampaign() {
+  static async fundCampaign(
+    client: Client,
+    params: FundCampaignParams
+  ): Promise<void> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
+
+    // Step 1. Input validation
+    this._validateFundCampaignParams(params)
+
+    const { backerWallet, campaignId, fundAmountInDrops } = params
+
+    // Step 3. Create transaction payloads
+    const fundCampaignPayload = new FundCampaignPayload()
+
+    // Step 4. submit Payment transaction with FundCampaignPayload
+    const fundCampaign: Payment = {
+      TransactionType: 'Payment',
+      Account: backerWallet.address,
+      Amount: fundAmountInDrops.toString(),
+      Destination: HOOK_ACCOUNT_WALLET.address, // TODO: replace with Hook Account address
+      DestinationTag: campaignId,
+      Memos: [
+        {
+          Memo: {
+            MemoData: fundCampaignPayload.encode(),
+            MemoFormat: convertStringToHex(`signed/payload+1`),
+            MemoType: convertStringToHex(`liteacc/payment`),
+          },
+        },
+      ],
+    }
+
+    await prepareTransactionV3(fundCampaign)
+
+    // Step 5. submit Payment transaction with CreateCampaignPayload
+    // @ts-expect-error - this is functional
+    validate(fundCampaign)
+    const paymentResponse = await client.submitAndWait(fundCampaign, {
+      autofill: true,
+      wallet: backerWallet,
+    })
+
+    // @ts-expect-error - this is defined
+    const paymentTxResult = paymentResponse?.result?.meta?.TransactionResult
+    if (paymentTxResult !== 'tesSUCCESS') {
+      throw Error(
+        `FundCampaign Payment transaction failed with ${paymentTxResult}`
+      )
+    }
+  }
+
+  static async voteRejectMilestone(client: Client): Promise<void> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
     // TODO: implement
     throw Error('Not implemented')
   }
 
-  static voteRejectMilestone() {
+  static async voteApproveMilestone(client: Client): Promise<void> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
     // TODO: implement
     throw Error('Not implemented')
   }
 
-  static voteApproveMilestone() {
+  static async requestRefundPayment(client: Client): Promise<void> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
     // TODO: implement
     throw Error('Not implemented')
   }
 
-  static requestRefundPayment() {
-    // TODO: implement
-    throw Error('Not implemented')
-  }
-
-  static requestMilestonePayoutPayment() {
+  static async requestMilestonePayoutPayment(client: Client): Promise<void> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
     // TODO: implement
     throw Error('Not implemented')
   }
@@ -150,7 +243,7 @@ export class Application {
   private static _validateCreateCampaignParams(params: CreateCampaignParams) {
     const {
       ownerWallet,
-      campaignId,
+      depositInDrops,
       title,
       description,
       overviewURL,
@@ -159,10 +252,21 @@ export class Application {
       milestones,
     } = params
 
-    // Step 1. Input validation
-    if (campaignId < 0 || campaignId > 2 ** 32 - 1) {
+    const currentTimeUnixInSeconds = Math.floor(Date.now() / 1000)
+
+    if (ownerWallet instanceof Wallet === false) {
       throw Error(
-        `Invalid campaignId ${campaignId}. Must be between 0 and 2^32 - 1`
+        `Invalid ownerWallet ${ownerWallet}. Must be an instance of Wallet`
+      )
+    }
+    if (depositInDrops < CREATE_CAMPAIGN_DEPOSIT_IN_DROPS) {
+      throw Error(
+        `Invalid depositInDrops ${depositInDrops}. Must be at least the create campaign deposit of ${CREATE_CAMPAIGN_DEPOSIT_IN_DROPS} drops`
+      )
+    }
+    if (depositInDrops > 2n ** 64n - 1n) {
+      throw Error(
+        `Invalid depositInDrops ${depositInDrops}. Must be less than 2^64 - 1 drops`
       )
     }
     if (title.length < 1 || title.length > TITLE_MAX_LENGTH) {
@@ -188,7 +292,7 @@ export class Application {
         `Invalid fundRaiseGoalInDrops ${fundRaiseGoalInDrops}. Must be between 1 and 2^64 - 1`
       )
     }
-    if (fundRaiseEndDateInUnixSeconds < Date.now() / 1000) {
+    if (fundRaiseEndDateInUnixSeconds <= currentTimeUnixInSeconds) {
       throw Error(
         `Invalid fundRaiseEndDateInUnixSeconds ${fundRaiseEndDateInUnixSeconds} is a past date. Must be a future date`
       )
@@ -204,7 +308,7 @@ export class Application {
       )
     }
     for (const milestone of milestones) {
-      if (milestone.endDateInUnixSeconds < Date.now() / 1000) {
+      if (milestone.endDateInUnixSeconds <= currentTimeUnixInSeconds) {
         throw Error(
           `Invalid milestone.endDateInUnixSeconds ${milestone.endDateInUnixSeconds} is a past date. Must be a future date`
         )
@@ -243,6 +347,31 @@ export class Application {
       )
     ) {
       throw Error('Milestone end dates must be in ascending order')
+    }
+  }
+
+  private static _validateFundCampaignParams(params: FundCampaignParams) {
+    const { backerWallet, campaignId, fundAmountInDrops } = params
+
+    if (backerWallet instanceof Wallet === false) {
+      throw Error(
+        `Invalid backerWallet ${backerWallet}. Must be an instance of Wallet`
+      )
+    }
+    if (campaignId < 0 || campaignId > 2 ** 32 - 1) {
+      throw Error(
+        `Invalid campaignId ${campaignId}. Must be between 0 and 2^32 - 1`
+      )
+    }
+    if (fundAmountInDrops <= FUND_CAMPAIGN_DEPOSIT_IN_DROPS) {
+      throw Error(
+        `Invalid fundAmountInDrops ${fundAmountInDrops}. Must be more than the fund campaign deposit of ${FUND_CAMPAIGN_DEPOSIT_IN_DROPS} drops`
+      )
+    }
+    if (fundAmountInDrops > 2n ** 64n - 1n) {
+      throw Error(
+        `Invalid fundAmountInDrops ${fundAmountInDrops}. Must be less than 2^64 - 1 drops`
+      )
     }
   }
 }

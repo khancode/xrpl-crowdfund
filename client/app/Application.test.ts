@@ -6,41 +6,53 @@ describe('Application', () => {
     describe('_validateCreateCampaignParams', () => {
       let ownerWallet: Wallet
       let params: CreateCampaignParams
+      let nextMonthInUnixSeconds: bigint
+      let next2MonthsInUnixSeconds: bigint
+      let next3MonthsInUnixSeconds: bigint
+      let next5MonthsInUnixSeconds: bigint
 
       beforeAll(() => {
         ownerWallet = Wallet.generate()
+        // init end dates in unix seconds
+        const now = new Date()
+        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        const next2Months = new Date(now.getFullYear(), now.getMonth() + 2, 1)
+        const next3Months = new Date(now.getFullYear(), now.getMonth() + 3, 1)
+        const next5Months = new Date(now.getFullYear(), now.getMonth() + 5, 1)
+        nextMonthInUnixSeconds = BigInt(Math.floor(nextMonth.getTime() / 1000))
+        next2MonthsInUnixSeconds = BigInt(
+          Math.floor(next2Months.getTime() / 1000)
+        )
+        next3MonthsInUnixSeconds = BigInt(
+          Math.floor(next3Months.getTime() / 1000)
+        )
+        next5MonthsInUnixSeconds = BigInt(
+          Math.floor(next5Months.getTime() / 1000)
+        )
       })
 
       beforeEach(() => {
         params = {
           ownerWallet,
-          campaignId: 0,
+          depositInDrops: Application.getCreateCampaignDepositInDrops(),
           title: 'title',
           description: 'description',
           overviewURL: 'overviewURL',
           fundRaiseGoalInDrops: BigInt(25000000000),
-          fundRaiseEndDateInUnixSeconds: BigInt(
-            Math.floor(Date.now() / 1000) + 1000
-          ), // next month
+          fundRaiseEndDateInUnixSeconds: nextMonthInUnixSeconds,
           milestones: [
             {
-              endDateInUnixSeconds: BigInt(
-                Math.floor(Date.now() / 1000) + 2000
-              ), // next 2 month
+              endDateInUnixSeconds: next2MonthsInUnixSeconds,
               title: 'milestoneTitle',
               payoutPercent: 25,
             },
             {
-              endDateInUnixSeconds: BigInt(
-                Math.floor(Date.now() / 1000) + 3000
-              ), // next 3 months
+              endDateInUnixSeconds: next3MonthsInUnixSeconds,
               title: 'milestoneTitle',
               payoutPercent: 25,
             },
             {
-              endDateInUnixSeconds: BigInt(
-                Math.floor(Date.now() / 1000) + 5000
-              ), // next 5 months
+              endDateInUnixSeconds: next5MonthsInUnixSeconds,
               title: 'milestoneTitle',
               payoutPercent: 50,
             },
@@ -53,24 +65,6 @@ describe('Application', () => {
           // @ts-expect-error - we're testing the private method
           Application._validateCreateCampaignParams(params)
         ).not.toThrow()
-      })
-
-      it('should throw if campaignId is negative', () => {
-        params.campaignId = -1
-        expect(() =>
-          // @ts-expect-error - we're testing the private method
-          Application._validateCreateCampaignParams(params)
-        ).toThrow('Invalid campaignId -1. Must be between 0 and 2^32 - 1')
-      })
-
-      it('should throw if campaignId is greater than 2^32 - 1', () => {
-        params.campaignId = 2 ** 32
-        expect(() =>
-          // @ts-expect-error - we're testing the private method
-          Application._validateCreateCampaignParams(params)
-        ).toThrow(
-          'Invalid campaignId 4294967296. Must be between 0 and 2^32 - 1'
-        )
       })
 
       it('should throw if title is too short', () => {
@@ -163,7 +157,7 @@ describe('Application', () => {
 
       it('should throw if milestones is greater than the max value allowed', () => {
         params.milestones = Array(11).fill({
-          endDateInUnixSeconds: Math.floor(Date.now() / 1000) + 2000, // next 2 month
+          endDateInUnixSeconds: nextMonthInUnixSeconds + 1n,
           title: 'milestoneTitle',
           payoutPercent: 25,
         })
@@ -232,12 +226,8 @@ describe('Application', () => {
       })
 
       it('should throw if milestones are not in ascending order', () => {
-        params.milestones[0].endDateInUnixSeconds = BigInt(
-          Math.floor(Date.now() / 1000) + 4000
-        )
-        params.milestones[1].endDateInUnixSeconds = BigInt(
-          Math.floor(Date.now() / 1000) + 1000
-        )
+        params.milestones[0].endDateInUnixSeconds = next2MonthsInUnixSeconds
+        params.milestones[1].endDateInUnixSeconds = nextMonthInUnixSeconds
         expect(() =>
           // @ts-expect-error - we're testing the private method
           Application._validateCreateCampaignParams(params)
