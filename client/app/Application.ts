@@ -106,7 +106,7 @@ export class Application {
     )
 
     // Step 4. submit Payment transaction with CreateCampaignPayload
-    const createCampaignPartA: Payment = {
+    const createCampaignTx: Payment = {
       TransactionType: 'Payment',
       Account: ownerWallet.address,
       Amount: depositInDrops.toString(),
@@ -123,12 +123,12 @@ export class Application {
       ],
     }
 
-    await prepareTransactionV3(createCampaignPartA)
+    await prepareTransactionV3(createCampaignTx)
 
     // Step 5. submit Payment transaction with CreateCampaignPayload
     // @ts-expect-error - this is functional
-    validate(createCampaignPartA)
-    const paymentResponse = await client.submitAndWait(createCampaignPartA, {
+    validate(createCampaignTx)
+    const paymentResponse = await client.submitAndWait(createCampaignTx, {
       autofill: true,
       wallet: ownerWallet,
     })
@@ -137,7 +137,7 @@ export class Application {
     const paymentTxResult = paymentResponse?.result?.meta?.TransactionResult
     if (paymentTxResult !== 'tesSUCCESS') {
       throw Error(
-        `CreateCampaignPartA Payment transaction failed with ${paymentTxResult}`
+        `CreateCampaign Payment transaction failed with ${paymentTxResult}`
       )
     }
 
@@ -172,7 +172,7 @@ export class Application {
     const fundCampaignPayload = new FundCampaignPayload()
 
     // Step 4. submit Payment transaction with FundCampaignPayload
-    const fundCampaign: Payment = {
+    const fundCampaignTx: Payment = {
       TransactionType: 'Payment',
       Account: backerWallet.address,
       Amount: fundAmountInDrops.toString(),
@@ -189,12 +189,12 @@ export class Application {
       ],
     }
 
-    await prepareTransactionV3(fundCampaign)
+    await prepareTransactionV3(fundCampaignTx)
 
     // Step 5. submit Payment transaction with CreateCampaignPayload
     // @ts-expect-error - this is functional
-    validate(fundCampaign)
-    const paymentResponse = await client.submitAndWait(fundCampaign, {
+    validate(fundCampaignTx)
+    const paymentResponse = await client.submitAndWait(fundCampaignTx, {
       autofill: true,
       wallet: backerWallet,
     })
