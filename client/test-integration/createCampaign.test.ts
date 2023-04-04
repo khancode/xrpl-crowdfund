@@ -2,6 +2,13 @@ import { Wallet } from 'xrpl'
 import { Application } from '../app/Application'
 import { fundWallet } from '../util/fundWallet'
 import { client, connectClient, disconnectClient } from '../util/xrplClient'
+import { StateUtility } from '../util/StateUtility'
+import {
+  CAMPAIGN_STATE_NEUTRAL_FLAG,
+  DATA_LOOKUP_GENERAL_INFO_FLAG,
+  MILESTONE_STATE_NEUTRAL_FLAG,
+} from '../app/constants'
+import { HSVCampaignGeneralInfo } from '../app/models/HSVCampaignGeneralInfo'
 
 describe.skip('Application.createCampaign', () => {
   let ownerWallet: Wallet
@@ -19,7 +26,8 @@ describe.skip('Application.createCampaign', () => {
   })
 
   it('should create a campaign', async () => {
-    const beforeCampaigns = await Application.viewCampaigns(client)
+    const beforeHookState = await StateUtility.getHookState(client)
+    const beforeAppState = await StateUtility.getApplicationState(client)
 
     // init end dates in unix seconds
     const now = new Date()
@@ -77,20 +85,81 @@ describe.skip('Application.createCampaign', () => {
       milestones,
     })
 
-    const afterCampaigns = await Application.viewCampaigns(client)
-    const campaignCreated = afterCampaigns.find(
+    const afterHookState = await StateUtility.getHookState(client)
+    const afterHookStateEntries = afterHookState.entries.filter(
+      (entry) => entry.key.destinationTag === campaignId
+    )
+    if (afterHookStateEntries.length === 0) {
+      throw new Error(`Campaign not found in hook state: ${campaignId}`)
+    }
+
+    const afterAppState = await StateUtility.getApplicationState(client)
+    const campaignCreated = afterAppState.campaigns.find(
       (campaign) => campaign.id === campaignId
     )
+    if (!campaignCreated) {
+      throw new Error(`Campaign not found in application state: ${campaignId}`)
+    }
 
-    expect(afterCampaigns.length).toBe(beforeCampaigns.length + 1)
+    /* Step 1. Verify Hook State contains latest changes */
+    expect(afterHookState.entries.length).toBe(
+      beforeHookState.entries.length + 1
+    )
+    expect(afterHookStateEntries.length).toBe(1)
+    expect(afterHookStateEntries[0].key.destinationTag).toBe(campaignId)
+    expect(afterHookStateEntries[0].key.dataLookupFlag).toBe(
+      DATA_LOOKUP_GENERAL_INFO_FLAG
+    )
+    const hsvGeneralInfo = afterHookStateEntries[0].value
+      .decoded as HSVCampaignGeneralInfo
+    expect(hsvGeneralInfo.state).toBe(CAMPAIGN_STATE_NEUTRAL_FLAG)
+    expect(hsvGeneralInfo.owner).toBe(ownerWallet.classicAddress)
+    expect(hsvGeneralInfo.fundRaiseGoalInDrops.toString()).toBe(
+      fundRaiseGoalInDrops.toString()
+    )
+    expect(hsvGeneralInfo.fundRaiseEndDateInUnixSeconds.toString()).toBe(
+      fundRaiseEndDateInUnixSeconds.toString()
+    )
+    expect(hsvGeneralInfo.totalAmountRaisedInDrops.toString()).toBe('0')
+    expect(hsvGeneralInfo.totalAmountRewardedInDrops.toString()).toBe('0')
+    expect(hsvGeneralInfo.totalReserveAmountInDrops.toString()).toBe(
+      Application.getCreateCampaignDepositInDrops().toString()
+    )
+    expect(hsvGeneralInfo.totalFundTransactions).toBe(0)
+    expect(hsvGeneralInfo.milestones.length).toBe(milestones.length)
+    for (let i = 0; i < hsvGeneralInfo.milestones.length; i++) {
+      const hsvMilestone = hsvGeneralInfo.milestones[i]
+      expect(hsvMilestone.state).toBe(MILESTONE_STATE_NEUTRAL_FLAG)
+      expect(hsvMilestone.endDateInUnixSeconds.toString()).toBe(
+        milestones[i].endDateInUnixSeconds.toString()
+      )
+      expect(hsvMilestone.payoutPercent).toBe(milestones[i].payoutPercent)
+      expect(hsvMilestone.rejectVotes).toBe(0)
+    }
+
+    /* Step 2. Verify Application State contains latest changes */
+    expect(afterAppState.campaigns.length).toBe(
+      beforeAppState.campaigns.length + 1
+    )
     expect(campaignCreated).toBeDefined()
-    expect(campaignCreated?.id).toBe(campaignId)
-    expect(campaignCreated?.fundRaiseGoalInDrops).toBe(fundRaiseGoalInDrops)
-    expect(campaignCreated?.fundRaiseEndDateInUnixSeconds).toBe(
+    expect(campaignCreated.id).toBe(campaignId)
+    expect(campaignCreated.fundRaiseGoalInDrops).toBe(fundRaiseGoalInDrops)
+    expect(campaignCreated.fundRaiseEndDateInUnixSeconds).toBe(
       fundRaiseEndDateInUnixSeconds
     )
-    expect(campaignCreated?.milestones.length).toBe(milestones.length)
-    expect(campaignCreated?.fundTransactions.length).toBe(0)
-    expect(campaignCreated?.backers.length).toBe(0)
+
+    expect(campaignCreated.milestones.length).toBe(milestones.length)
+    for (let i = 0; i < campaignCreated.milestones.length; i++) {
+      const milestone = campaignCreated.milestones[i]
+      expect(milestone.state).toBe('unstarted')
+      expect(milestone.endDateInUnixSeconds.toString()).toBe(
+        milestones[i].endDateInUnixSeconds.toString()
+      )
+      expect(milestone.payoutPercent).toBe(milestones[i].payoutPercent)
+      expect(milestone.rejectVotes).toBe(0)
+    }
+
+    expect(campaignCreated.fundTransactions.length).toBe(0)
+    expect(campaignCreated.backers.length).toBe(0)
   })
 })

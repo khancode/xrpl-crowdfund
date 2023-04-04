@@ -117,14 +117,15 @@ export const deriveCampaignState = (
 
 // convert milestone state flag to milestone state
 export const deriveMilestonesStates = (
+  fundRaiseEndDateInUnixSeconds: bigint,
   milestones: HSVMilestone[]
 ): MilestoneState[] => {
   return milestones.map((milestone, index, array) => {
     if (milestone.state === MILESTONE_STATE_NEUTRAL_FLAG) {
       const currentTimeUnixInSeconds = Math.floor(Date.now() / 1000)
-      const prevMilestoneEndDateInUnixSeconds =
-        array[index - 1]?.endDateInUnixSeconds || 0
-      if (currentTimeUnixInSeconds >= prevMilestoneEndDateInUnixSeconds) {
+      const prevEndDateInUnixSeconds =
+        array[index - 1]?.endDateInUnixSeconds || fundRaiseEndDateInUnixSeconds
+      if (currentTimeUnixInSeconds >= prevEndDateInUnixSeconds) {
         if (currentTimeUnixInSeconds < milestone.endDateInUnixSeconds) {
           return 'inProgress'
         } else {

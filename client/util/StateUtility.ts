@@ -95,7 +95,10 @@ export class StateUtility {
 
       if (dataLookupFlag === DATA_LOOKUP_GENERAL_INFO_FLAG) {
         const generalInfo = value.decoded as HSVCampaignGeneralInfo
-        const milestonesStates = deriveMilestonesStates(generalInfo.milestones)
+        const milestonesStates = deriveMilestonesStates(
+          generalInfo.fundRaiseEndDateInUnixSeconds,
+          generalInfo.milestones
+        )
         const milestones: Milestone[] = generalInfo.milestones.map(
           (milestone, index) => {
             return new Milestone(
