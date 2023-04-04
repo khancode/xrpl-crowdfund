@@ -21,8 +21,7 @@ export type CampaignState =
   | 'completed'
 
 export type CampaignStateFlag =
-  | typeof CAMPAIGN_STATE_NEUTRAL_FLAG
-  | typeof CAMPAIGN_STATE_FAILED_FUND_RAISE_FLAG
+  | typeof CAMPAIGN_STATE_DERIVE_FLAG
   | typeof CAMPAIGN_STATE_FAILED_MILESTONE_FLAG
 
 export type MilestoneState =
@@ -33,7 +32,7 @@ export type MilestoneState =
   | 'paid'
 
 export type MilestoneStateFlag =
-  | typeof MILESTONE_STATE_NEUTRAL_FLAG
+  | typeof MILESTONE_STATE_DERIVE_FLAG
   | typeof MILESTONE_STATE_FAILED_FLAG
   | typeof MILESTONE_STATE_PAID_FLAG
 
@@ -47,12 +46,11 @@ export type FundTransactionStateFlag =
 export const HOOK_ACCOUNT_WALLET = Wallet.fromSeed(config.HOOK_ACCOUNT.seed)
 
 // Campaign States
-export const CAMPAIGN_STATE_NEUTRAL_FLAG = 0x00
-export const CAMPAIGN_STATE_FAILED_FUND_RAISE_FLAG = 0x01
-export const CAMPAIGN_STATE_FAILED_MILESTONE_FLAG = 0x02
+export const CAMPAIGN_STATE_DERIVE_FLAG = 0x00
+export const CAMPAIGN_STATE_FAILED_MILESTONE_FLAG = 0x01
 
 // Milestone States
-export const MILESTONE_STATE_NEUTRAL_FLAG = 0x00
+export const MILESTONE_STATE_DERIVE_FLAG = 0x00
 export const MILESTONE_STATE_FAILED_FLAG = 0x01
 export const MILESTONE_STATE_PAID_FLAG = 0x02
 
@@ -92,10 +90,14 @@ export const FUND_CAMPAIGN_DEPOSIT_IN_DROPS = 10000000n
 export const deriveCampaignState = (
   generalInfo: HSVCampaignGeneralInfo
 ): CampaignState => {
-  if (generalInfo.state === CAMPAIGN_STATE_NEUTRAL_FLAG) {
+  if (generalInfo.state === CAMPAIGN_STATE_DERIVE_FLAG) {
     const currentTimeUnixInSeconds = Math.floor(Date.now() / 1000)
     if (currentTimeUnixInSeconds < generalInfo.fundRaiseEndDateInUnixSeconds) {
       return 'fundRaise'
+    } else if (
+      generalInfo.totalAmountRaisedInDrops < generalInfo.fundRaiseGoalInDrops
+    ) {
+      return 'failedFundRaise'
     }
 
     for (let i = 0; i < generalInfo.milestones.length; i++) {
@@ -106,8 +108,6 @@ export const deriveCampaignState = (
     }
 
     return 'completed'
-  } else if (generalInfo.state === CAMPAIGN_STATE_FAILED_FUND_RAISE_FLAG) {
-    return 'failedFundRaise'
   } else if (generalInfo.state === CAMPAIGN_STATE_FAILED_MILESTONE_FLAG) {
     return 'failedMilestone'
   }
@@ -121,7 +121,7 @@ export const deriveMilestonesStates = (
   milestones: HSVMilestone[]
 ): MilestoneState[] => {
   return milestones.map((milestone, index, array) => {
-    if (milestone.state === MILESTONE_STATE_NEUTRAL_FLAG) {
+    if (milestone.state === MILESTONE_STATE_DERIVE_FLAG) {
       const currentTimeUnixInSeconds = Math.floor(Date.now() / 1000)
       const prevEndDateInUnixSeconds =
         array[index - 1]?.endDateInUnixSeconds || fundRaiseEndDateInUnixSeconds

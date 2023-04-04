@@ -4,9 +4,9 @@ import { fundWallet } from '../util/fundWallet'
 import { client, connectClient, disconnectClient } from '../util/xrplClient'
 import { StateUtility } from '../util/StateUtility'
 import {
-  CAMPAIGN_STATE_NEUTRAL_FLAG,
+  CAMPAIGN_STATE_DERIVE_FLAG,
   DATA_LOOKUP_GENERAL_INFO_FLAG,
-  MILESTONE_STATE_NEUTRAL_FLAG,
+  MILESTONE_STATE_DERIVE_FLAG,
 } from '../app/constants'
 import { HSVCampaignGeneralInfo } from '../app/models/HSVCampaignGeneralInfo'
 
@@ -112,7 +112,7 @@ describe.skip('Application.createCampaign', () => {
     )
     const hsvGeneralInfo = afterHookStateEntries[0].value
       .decoded as HSVCampaignGeneralInfo
-    expect(hsvGeneralInfo.state).toBe(CAMPAIGN_STATE_NEUTRAL_FLAG)
+    expect(hsvGeneralInfo.state).toBe(CAMPAIGN_STATE_DERIVE_FLAG)
     expect(hsvGeneralInfo.owner).toBe(ownerWallet.classicAddress)
     expect(hsvGeneralInfo.fundRaiseGoalInDrops.toString()).toBe(
       fundRaiseGoalInDrops.toString()
@@ -129,7 +129,7 @@ describe.skip('Application.createCampaign', () => {
     expect(hsvGeneralInfo.milestones.length).toBe(milestones.length)
     for (let i = 0; i < hsvGeneralInfo.milestones.length; i++) {
       const hsvMilestone = hsvGeneralInfo.milestones[i]
-      expect(hsvMilestone.state).toBe(MILESTONE_STATE_NEUTRAL_FLAG)
+      expect(hsvMilestone.state).toBe(MILESTONE_STATE_DERIVE_FLAG)
       expect(hsvMilestone.endDateInUnixSeconds.toString()).toBe(
         milestones[i].endDateInUnixSeconds.toString()
       )

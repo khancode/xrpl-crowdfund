@@ -173,7 +173,7 @@ int64_t hook(uint32_t reserved) {
         uint8_t general_info_buffer[GENERAL_INFO_MAX_BYTES];
 
         /* Step 2. Write Campaign State to General Info Buffer */
-        general_info_buffer[general_info_index++] = CAMPAIGN_STATE_NEUTRAL_FLAG;
+        general_info_buffer[general_info_index++] = CAMPAIGN_STATE_DERIVE_FLAG;
 
         /* Step 3. Write Campaign Owner to General Info Buffer */
         general_info_buffer[general_info_index++] = owner_raddress_len;
@@ -243,7 +243,7 @@ int64_t hook(uint32_t reserved) {
         uint8_t* milestones_iterator = milestones;
         for (int i = 0; GUARD(MILESTONES_MAX_LENGTH), i < milestones_len; i++) {
             /* Step 9.1. milestone.state */
-            general_info_buffer[general_info_index++] = MILESTONE_STATE_NEUTRAL_FLAG;
+            general_info_buffer[general_info_index++] = MILESTONE_STATE_DERIVE_FLAG;
 
             /* Step 9.2. milestone.endDateInUnixSeconds */
             uint64_t milestone_end_date_in_unix_seconds = UINT64_FROM_BUF(milestones_iterator);
