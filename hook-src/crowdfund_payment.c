@@ -75,6 +75,8 @@ int64_t hook(uint32_t reserved) {
 
     TRACEVAR(mode_flag);
 
+    int64_t current_timestamp_unix_seconds = GET_LAST_LEDGER_TIME_IN_UNIX_SECONDS();
+
     if (mode_flag == MODE_CREATE_CAMPAIGN_FLAG) {
         TRACESTR("Mode: Create Campaign");
 
@@ -122,7 +124,6 @@ int64_t hook(uint32_t reserved) {
         uint64_t fund_raise_end_date_in_unix_seconds = UINT64_FROM_BUF(payload_ptr);
         TRACEVAR(fund_raise_end_date_in_unix_seconds);
         payload_ptr += 8;
-        int64_t current_timestamp_unix_seconds = GET_LAST_LEDGER_TIME_IN_UNIX_SECONDS();
         TRACEVAR(current_timestamp_unix_seconds);
         if (fund_raise_end_date_in_unix_seconds <= current_timestamp_unix_seconds) {
             rollback(SBUF("Fund raise end date must be in the future."), 400);
@@ -306,7 +307,6 @@ int64_t hook(uint32_t reserved) {
 
         /* Step 3. verify campaign is in fund raise state */
         uint64_t fund_raise_end_date_in_unix_seconds = UINT64_FROM_BUF(general_info_buffer + GENERAL_INFO_FUND_RAISE_END_DATE_IN_UNIX_SECONDS_INDEX);
-        int64_t current_timestamp_unix_seconds = GET_LAST_LEDGER_TIME_IN_UNIX_SECONDS();
         if (current_timestamp_unix_seconds >= fund_raise_end_date_in_unix_seconds) {
             rollback(SBUF("Campaign is no longer in fund raise state."), 400);
         }

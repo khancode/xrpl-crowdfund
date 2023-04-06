@@ -39,6 +39,7 @@ import { FundCampaignPayload } from './models/FundCampaignPayload'
 import { MilestonePayload } from './models/MilestonePayload'
 import { Campaign } from './models/Campaign'
 import { VoteRejectMilestonePayload } from './models/VoteRejectMilestonePayload'
+import { VoteApproveMilestonePayload } from './models/VoteApproveMilestonePayload'
 
 export interface CreateCampaignParams {
   ownerWallet: Wallet
@@ -61,11 +62,15 @@ export interface FundCampaignParams {
   fundAmountInDrops: bigint
 }
 
-export interface VoteRejectMilestoneParams {
+interface VoteParams {
   backerWallet: Wallet
   campaignId: number
   fundTransactionId: number
 }
+
+export type VoteRejectMilestoneParams = VoteParams
+
+export type VoteApproveMilestoneParams = VoteParams
 
 export class Application {
   static getCreateCampaignDepositInDrops(): bigint {
@@ -228,7 +233,7 @@ export class Application {
     }
 
     /* Step 1. Input validation */
-    this._validateVoteRejectMilestoneParams(params)
+    this._validateVoteParams(params)
 
     const { backerWallet, campaignId, fundTransactionId } = params
 
@@ -264,12 +269,49 @@ export class Application {
     )
   }
 
-  static async voteApproveMilestone(client: Client): Promise<void> {
+  static async voteApproveMilestone(
+    client: Client,
+    params: VoteApproveMilestoneParams
+  ): Promise<void> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
     }
-    // TODO: implement
-    throw new Error('Not implemented')
+
+    /* Step 1. Input validation */
+    this._validateVoteParams(params)
+
+    const { backerWallet, campaignId, fundTransactionId } = params
+
+    /* Step 2. Create transaction Memo payload */
+    const voteApproveMilestonePayload = new VoteApproveMilestonePayload(
+      fundTransactionId
+    )
+
+    /* Step 3. Submit Invoke transaction with VoteApproveMilestonePayload */
+    const voteApproveMilestoneTx: Transaction = {
+      // @ts-expect-error - Invoke transaction type is supported in Hooks Testnet v3
+      TransactionType: 'Invoke',
+      Account: backerWallet.address,
+      Destination: HOOK_ACCOUNT_WALLET.address,
+      DestinationTag: campaignId,
+      Blob: voteApproveMilestonePayload.encode(),
+    }
+
+    await prepareTransactionV3(voteApproveMilestoneTx)
+
+    const voteApproveMilestoneTxResponse = await client.submitAndWait(
+      voteApproveMilestoneTx,
+      {
+        autofill: true,
+        wallet: backerWallet,
+      }
+    )
+
+    /* Step 4. Check Invoke transaction result */
+    this._validateTxResponse(
+      voteApproveMilestoneTxResponse,
+      'voteApproveMilestone'
+    )
   }
 
   static async requestRefundPayment(client: Client): Promise<void> {
@@ -292,7 +334,7 @@ export class Application {
     txResponse: TxResponse,
     operationName: string
   ) {
-    const { meta } = txResponse?.result
+    const { meta, TransactionType } = txResponse?.result
     // @ts-expect-error - this can exists
     const { TransactionResult } = meta
     if (TransactionResult === 'tecHOOK_REJECTED') {
@@ -303,11 +345,11 @@ export class Application {
         'utf8'
       )
       throw new Error(
-        `${operationName} TODO:TransactionType transaction rejected by hook with error: "${rollbackMessage}"`
+        `${operationName} ${TransactionType} transaction rejected by hook with error: "${rollbackMessage}"`
       )
     } else if (TransactionResult !== 'tesSUCCESS') {
       throw new Error(
-        `${operationName} TODO:TransactionType transaction failed with ${TransactionResult}`
+        `${operationName} ${TransactionType} transaction failed with ${TransactionResult}`
       )
     }
   }
@@ -447,9 +489,7 @@ export class Application {
     }
   }
 
-  private static _validateVoteRejectMilestoneParams(
-    params: VoteRejectMilestoneParams
-  ) {
+  private static _validateVoteParams(params: VoteParams) {
     const { backerWallet, campaignId, fundTransactionId } = params
 
     if (backerWallet instanceof Wallet === false) {

@@ -1,6 +1,7 @@
 /**
  * This hook only accepts Invoke transactions coming through it
  */
+#include <stdbool.h>
 #include "hookapi.h"
 #include "crowdfund.h"
 
@@ -34,8 +35,13 @@ int64_t hook(uint32_t reserved) {
 
     int64_t current_timestamp_unix_seconds = GET_LAST_LEDGER_TIME_IN_UNIX_SECONDS();
 
-    if (mode_flag == MODE_VOTE_REJECT_MILESTONE_FLAG) {
-        TRACESTR("Mode: Vote Reject Milestone");
+    if (mode_flag == MODE_VOTE_REJECT_MILESTONE_FLAG || mode_flag == MODE_VOTE_APPROVE_MILESTONE_FLAG) {
+        const bool IS_VOTE_REJECT = mode_flag == MODE_VOTE_REJECT_MILESTONE_FLAG;
+        if (IS_VOTE_REJECT) {
+            TRACESTR("Mode: Vote Reject Milestone");
+        } else {
+            TRACESTR("Mode: Vote Approve Milestone");
+        }
 
         /***** Validate/Parse Fields Steps *****/
         /* Step 1. DestinationTag - Check if destinationTag exists for a campaign */
@@ -129,17 +135,18 @@ int64_t hook(uint32_t reserved) {
             rollback(SBUF("Backer doesn't match fund transaction; backer_raddress != fund_transaction_backer_raddress"), 400);
         };
 
-        /* Step 9. Check if Fund Transaction has already voted reject */
+        /* Step 9. Check if Fund Transaction has already placed same vote */
+        const uint8_t VOTE_FLAG_UPDATE = IS_VOTE_REJECT ? FUND_TRANSACTION_STATE_REJECT_FLAG : FUND_TRANSACTION_STATE_APPROVE_FLAG;
         uint8_t fund_transaction_state_flag = fund_transaction_page_buffer[fund_transaction_page_index + FUND_TRANSACTION_STATE_INDEX_OFFSET];
         TRACEVAR(fund_transaction_state_flag);
 
-        if (fund_transaction_state_flag == FUND_TRANSACTION_STATE_REJECT_FLAG) {
-            rollback(SBUF("Fund Transaction has already voted reject"), 400);
+        if (fund_transaction_state_flag == VOTE_FLAG_UPDATE) {
+            rollback(SBUF("Fund Transaction has already placed same vote"), 400);
         }
 
         /***** Update Fund Transaction Hook State Steps *****/
-        /* Step 1. Change Fund Transaction state to reject */
-        fund_transaction_page_buffer[fund_transaction_page_index + FUND_TRANSACTION_STATE_INDEX_OFFSET] = FUND_TRANSACTION_STATE_REJECT_FLAG;
+        /* Step 1. Change Fund Transaction state to updated vote */
+        fund_transaction_page_buffer[fund_transaction_page_index + FUND_TRANSACTION_STATE_INDEX_OFFSET] = VOTE_FLAG_UPDATE;
 
         /* Step 2. Update Fund Transaction Hook State */
         int64_t fund_transaction_state_set_res = state_set(SBUF(fund_transaction_page_buffer), SBUF(hook_state_fund_transaction_page_key));
@@ -151,7 +158,7 @@ int64_t hook(uint32_t reserved) {
         /***** Update Campaign General Info Hook State Steps *****/
         /* Step 1. Increment reject votes for General Info */
         uint32_t total_reject_votes_for_current_milestone = UINT32_FROM_BUF(general_info_buffer + GENERAL_INFO_TOTAL_REJECT_VOTES_FOR_CURRENT_MILESTONE_INDEX);
-        total_reject_votes_for_current_milestone += 1;
+        total_reject_votes_for_current_milestone += IS_VOTE_REJECT ? 1 : -1;
         TRACEVAR(total_reject_votes_for_current_milestone);
 
         /* Step 2. Check if reject votes for General Info is greater than 50% (half) of total votes */
@@ -195,9 +202,6 @@ int64_t hook(uint32_t reserved) {
         if (general_info_state_set_res < 0) {
             rollback(SBUF("Failed to update general info hook state"), 400);
         }
-    } else if (mode_flag == MODE_VOTE_APPROVE_MILESTONE_FLAG) {
-        TRACESTR("Mode: Vote Approve Milestone");
-        rollback(SBUF("Mode: Vote Approve Milestone - Not implemented"), 54);
     } else if (mode_flag == MODE_REQUEST_REFUND_PAYMENT_FLAG) {
         TRACESTR("Mode: Request Refund Payment");
         rollback(SBUF("Mode: Request Refund Payment - Not implemented"), 54);
