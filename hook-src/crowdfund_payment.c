@@ -449,6 +449,14 @@ int64_t hook(uint32_t reserved) {
                 rollback(SBUF("Failed to write general info to hook state."), 400);
             }
         }
+
+        /***** Return Fund Transaction Id in transaction response *****/
+        uint8_t fund_transaction_id_buffer[4];
+        UINT32_TO_BUF(fund_transaction_id_buffer, fund_transaction_id);
+        trace(SBUF("fund_transaction_id_buffer"), fund_transaction_id_buffer, 4, 1);
+        TRACESTR("Accept.c: Called returning fund_transaction_id");
+        accept (SBUF(fund_transaction_id_buffer), 0);
+        return 0;
     } else {
         rollback(SBUF("Invalid mode_flag"), 54);
     }

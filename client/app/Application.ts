@@ -177,7 +177,7 @@ export class Application {
     client: Client,
     params: FundCampaignParams,
     bypassValidation = false // used for adding test data with past dates
-  ): Promise<void> {
+  ): Promise<number> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
     }
@@ -221,7 +221,14 @@ export class Application {
     })
 
     /* Step 5. Check Payment transaction result */
-    this._validateTxResponse(paymentResponse, 'fundCampaign')
+    const acceptMessageHex = this._validateTxResponse(
+      paymentResponse,
+      'fundCampaign'
+    )
+
+    /* Step 6. Return fundTransactionId from transaction response */
+    const fundTransactionId = parseInt(acceptMessageHex, 16)
+    return fundTransactionId
   }
 
   static async voteRejectMilestone(
@@ -333,14 +340,15 @@ export class Application {
   private static _validateTxResponse(
     txResponse: TxResponse,
     operationName: string
-  ) {
+  ): string {
     const { meta, TransactionType } = txResponse?.result
     // @ts-expect-error - this can exists
     const { TransactionResult } = meta
+    const hookReturnString =
+      // @ts-expect-error - this is defined here
+      meta.HookExecutions[0].HookExecution.HookReturnString
     if (TransactionResult === 'tecHOOK_REJECTED') {
-      const rollbackMessageHex =
-        // @ts-expect-error - this is defined here
-        meta.HookExecutions[0].HookExecution.HookReturnString
+      const rollbackMessageHex = hookReturnString
       const rollbackMessage = Buffer.from(rollbackMessageHex, 'hex').toString(
         'utf8'
       )
@@ -352,6 +360,9 @@ export class Application {
         `${operationName} ${TransactionType} transaction failed with ${TransactionResult}`
       )
     }
+
+    const acceptMessageHex = hookReturnString
+    return acceptMessageHex
   }
 
   private static _validateCreateCampaignParams(params: CreateCampaignParams) {
