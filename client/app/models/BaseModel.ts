@@ -64,7 +64,7 @@ export abstract class BaseModel {
           break
         case 'varString':
           if (maxStringLength === undefined) {
-            throw Error('maxStringLength is required for type varString')
+            throw new Error('maxStringLength is required for type varString')
           }
           length += maxStringLength * 2 + (maxStringLength <= 2 ** 8 ? 2 : 4)
           break
@@ -75,11 +75,11 @@ export abstract class BaseModel {
           length += BaseModel.getHexLength(fieldModelClass)
           break
         case 'varModelArray':
-          throw Error(
+          throw new Error(
             "varModelArray hex length doesn't need to be computed for this application; only its model elements only do. However, this will fail if getHexLength is called on a model that contains a varModelArray. Will need to be updated if this is ever needed."
           )
         default:
-          throw Error(`Unknown type: ${type}`)
+          throw new Error(`Unknown type: ${type}`)
       }
     }
 
@@ -112,11 +112,11 @@ export abstract class BaseModel {
             return ''
           case 'model':
             if (metadata.modelClass === undefined) {
-              throw Error('modelClass is required for type model')
+              throw new Error('modelClass is required for type model')
             }
             return BaseModel.createEmpty(metadata.modelClass)
           default:
-            throw Error(`Unknown type: ${metadata.type}`)
+            throw new Error(`Unknown type: ${metadata.type}`)
         }
       })
     return new modelClass(...modelArgs)

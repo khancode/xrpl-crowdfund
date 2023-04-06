@@ -41,7 +41,7 @@ export function decodeModel<T extends BaseModel>(
         break
       case 'varString':
         if (maxStringLength === undefined) {
-          throw Error('maxStringLength is required for type varString')
+          throw new Error('maxStringLength is required for type varString')
         }
         const prefixLengthHex = maxStringLength <= 2 ** 8 ? 2 : 4
         const length = prefixLengthHex + maxStringLength * 2
@@ -56,7 +56,7 @@ export function decodeModel<T extends BaseModel>(
         break
       case 'model':
         if (fieldModelClass === undefined) {
-          throw Error('modelClass is required for type model')
+          throw new Error('modelClass is required for type model')
         }
         const modelHexLength = BaseModel.getHexLength(fieldModelClass)
         fieldHex = hex.slice(hexIndex, hexIndex + modelHexLength)
@@ -65,7 +65,7 @@ export function decodeModel<T extends BaseModel>(
         break
       case 'varModelArray':
         if (fieldModelClass === undefined) {
-          throw Error('modelClass is required for type varModelArray')
+          throw new Error('modelClass is required for type varModelArray')
         }
         const lengthHex = hex.slice(hexIndex, hexIndex + 2)
         const varModelArrayLength = hexToUInt8(lengthHex)
@@ -84,7 +84,7 @@ export function decodeModel<T extends BaseModel>(
         decodedField = modelArray
         break
       default:
-        throw Error(`Unknown type: ${type}`)
+        throw new Error(`Unknown type: ${type}`)
     }
 
     // Add decoded field to model
@@ -111,17 +111,17 @@ function decodeField(
       return hexToUInt224(hex)
     case 'varString':
       if (maxStringLength === undefined) {
-        throw Error('maxStringLength is required for type varString')
+        throw new Error('maxStringLength is required for type varString')
       }
       return hexToVarString(hex, maxStringLength)
     case 'xrpAddress':
       return hexToXRPAddress(hex)
     case 'model':
-      throw Error('model type should be handled by decodeModel')
+      throw new Error('model type should be handled by decodeModel')
     case 'varModelArray':
-      throw Error('varModelArray type should be handled by decodeModel')
+      throw new Error('varModelArray type should be handled by decodeModel')
     default:
-      throw Error(`Unknown type: ${type}`)
+      throw new Error(`Unknown type: ${type}`)
   }
 }
 
@@ -149,7 +149,7 @@ function hexToVarStringLength(hex: string, maxStringLength: number): number {
     // 2-byte length
     return parseInt(hex.slice(0, 4), 16)
   }
-  throw Error('maxStringLength exceeds 2 bytes')
+  throw new Error('maxStringLength exceeds 2 bytes')
 }
 
 export function hexToVarString(

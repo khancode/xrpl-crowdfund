@@ -16,6 +16,7 @@ import {
   convertStringToHex,
   Payment,
   Transaction,
+  TxResponse,
   validate,
   Wallet,
 } from 'xrpl'
@@ -77,7 +78,8 @@ export class Application {
 
   static async createCampaign(
     client: Client,
-    params: CreateCampaignParams
+    params: CreateCampaignParams,
+    bypassValidation = false // used for adding test data with past dates
   ): Promise<number> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
@@ -95,7 +97,9 @@ export class Application {
     } = params
 
     /* Step 1. Input validation */
-    this._validateCreateCampaignParams(params)
+    if (!bypassValidation) {
+      this._validateCreateCampaignParams(params)
+    }
 
     /* Step 2. Generate a random unique campaign ID */
     const campaigns = await Application.viewCampaigns(client)
@@ -148,24 +152,7 @@ export class Application {
     })
 
     /* Step 7. Check Payment transaction result */
-    const { meta } = paymentResponse?.result
-    // @ts-expect-error - this can exists
-    const { TransactionResult } = meta
-    if (TransactionResult === 'tecHOOK_REJECTED') {
-      const rollbackMessageHex =
-        // @ts-expect-error - this is defined here
-        meta.HookExecutions[0].HookExecution.HookReturnString
-      const rollbackMessage = Buffer.from(rollbackMessageHex, 'hex').toString(
-        'utf8'
-      )
-      throw Error(
-        `CreateCampaign Payment transaction rejected by hook with error: "${rollbackMessage}"`
-      )
-    } else if (TransactionResult !== 'tesSUCCESS') {
-      throw Error(
-        `CreateCampaign Payment transaction failed with ${TransactionResult}`
-      )
-    }
+    this._validateTxResponse(paymentResponse, 'createCampaign')
 
     /* TODO: Step 6. Add title(campaign & milestones), description, overviewURL fields to an off-ledger database (e.g. MongoDB) */
 
@@ -183,14 +170,17 @@ export class Application {
 
   static async fundCampaign(
     client: Client,
-    params: FundCampaignParams
+    params: FundCampaignParams,
+    bypassValidation = false // used for adding test data with past dates
   ): Promise<void> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
     }
 
     /* Step 1. Input validation */
-    this._validateFundCampaignParams(params)
+    if (!bypassValidation) {
+      this._validateFundCampaignParams(params)
+    }
 
     const { backerWallet, campaignId, fundAmountInDrops } = params
 
@@ -226,24 +216,7 @@ export class Application {
     })
 
     /* Step 5. Check Payment transaction result */
-    const { meta } = paymentResponse?.result
-    // @ts-expect-error - this can exists
-    const { TransactionResult } = meta
-    if (TransactionResult === 'tecHOOK_REJECTED') {
-      const rollbackMessageHex =
-        // @ts-expect-error - this is defined here
-        meta.HookExecutions[0].HookExecution.HookReturnString
-      const rollbackMessage = Buffer.from(rollbackMessageHex, 'hex').toString(
-        'utf8'
-      )
-      throw Error(
-        `CreateCampaign Payment transaction rejected by hook with error: "${rollbackMessage}"`
-      )
-    } else if (TransactionResult !== 'tesSUCCESS') {
-      throw Error(
-        `CreateCampaign Payment transaction failed with ${TransactionResult}`
-      )
-    }
+    this._validateTxResponse(paymentResponse, 'fundCampaign')
   }
 
   static async voteRejectMilestone(
@@ -283,11 +256,43 @@ export class Application {
         wallet: backerWallet,
       }
     )
-    console.log('voteRejectMilestoneTxResponse:')
-    console.log(voteRejectMilestoneTxResponse)
 
     /* Step 4. Check Invoke transaction result */
-    const { meta } = voteRejectMilestoneTxResponse?.result
+    this._validateTxResponse(
+      voteRejectMilestoneTxResponse,
+      'voteRejectMilestone'
+    )
+  }
+
+  static async voteApproveMilestone(client: Client): Promise<void> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
+    // TODO: implement
+    throw new Error('Not implemented')
+  }
+
+  static async requestRefundPayment(client: Client): Promise<void> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
+    // TODO: implement
+    throw new Error('Not implemented')
+  }
+
+  static async requestMilestonePayoutPayment(client: Client): Promise<void> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
+    // TODO: implement
+    throw new Error('Not implemented')
+  }
+
+  private static _validateTxResponse(
+    txResponse: TxResponse,
+    operationName: string
+  ) {
+    const { meta } = txResponse?.result
     // @ts-expect-error - this can exists
     const { TransactionResult } = meta
     if (TransactionResult === 'tecHOOK_REJECTED') {
@@ -297,38 +302,14 @@ export class Application {
       const rollbackMessage = Buffer.from(rollbackMessageHex, 'hex').toString(
         'utf8'
       )
-      throw Error(
-        `VoteRejectMilestone Invoke transaction rejected by hook with error: "${rollbackMessage}"`
+      throw new Error(
+        `${operationName} TODO:TransactionType transaction rejected by hook with error: "${rollbackMessage}"`
       )
     } else if (TransactionResult !== 'tesSUCCESS') {
-      throw Error(
-        `VoteRejectMilestone Invoke transaction failed with ${TransactionResult}`
+      throw new Error(
+        `${operationName} TODO:TransactionType transaction failed with ${TransactionResult}`
       )
     }
-  }
-
-  static async voteApproveMilestone(client: Client): Promise<void> {
-    if (!client.isConnected()) {
-      throw new Error('xrpl Client is not connected')
-    }
-    // TODO: implement
-    throw Error('Not implemented')
-  }
-
-  static async requestRefundPayment(client: Client): Promise<void> {
-    if (!client.isConnected()) {
-      throw new Error('xrpl Client is not connected')
-    }
-    // TODO: implement
-    throw Error('Not implemented')
-  }
-
-  static async requestMilestonePayoutPayment(client: Client): Promise<void> {
-    if (!client.isConnected()) {
-      throw new Error('xrpl Client is not connected')
-    }
-    // TODO: implement
-    throw Error('Not implemented')
   }
 
   private static _validateCreateCampaignParams(params: CreateCampaignParams) {
@@ -346,27 +327,27 @@ export class Application {
     const currentTimeUnixInSeconds = Math.floor(Date.now() / 1000)
 
     if (ownerWallet instanceof Wallet === false) {
-      throw Error(
+      throw new Error(
         `Invalid ownerWallet ${ownerWallet}. Must be an instance of Wallet`
       )
     }
     if (depositInDrops < CREATE_CAMPAIGN_DEPOSIT_IN_DROPS) {
-      throw Error(
+      throw new Error(
         `Invalid depositInDrops ${depositInDrops}. Must be at least the create campaign deposit of ${CREATE_CAMPAIGN_DEPOSIT_IN_DROPS} drops`
       )
     }
     if (depositInDrops > 2n ** 64n - 1n) {
-      throw Error(
+      throw new Error(
         `Invalid depositInDrops ${depositInDrops}. Must be less than 2^64 - 1 drops`
       )
     }
     if (title.length < 1 || title.length > TITLE_MAX_LENGTH) {
-      throw Error(
+      throw new Error(
         `Invalid title length ${title.length}. Must be between 1 and ${TITLE_MAX_LENGTH}`
       )
     }
     if (description.length < 1 || description.length > DESCRIPTION_MAX_LENGTH) {
-      throw Error(
+      throw new Error(
         `Invalid description length ${description.length}. Must be between 1 and ${DESCRIPTION_MAX_LENGTH}`
       )
     }
@@ -374,48 +355,48 @@ export class Application {
       overviewURL.length < 1 ||
       overviewURL.length > OVERVIEW_URL_MAX_LENGTH
     ) {
-      throw Error(
+      throw new Error(
         `Invalid overviewURL length ${overviewURL.length}. Must be between 1 and ${OVERVIEW_URL_MAX_LENGTH}`
       )
     }
     if (fundRaiseGoalInDrops < 1 || fundRaiseGoalInDrops > 2n ** 64n - 1n) {
-      throw Error(
+      throw new Error(
         `Invalid fundRaiseGoalInDrops ${fundRaiseGoalInDrops}. Must be between 1 and 2^64 - 1`
       )
     }
     if (fundRaiseEndDateInUnixSeconds <= currentTimeUnixInSeconds) {
-      throw Error(
+      throw new Error(
         `Invalid fundRaiseEndDateInUnixSeconds ${fundRaiseEndDateInUnixSeconds} is a past date. Must be a future date`
       )
     }
     if (fundRaiseEndDateInUnixSeconds > 2 ** 32 - 1) {
-      throw Error(
+      throw new Error(
         `Invalid fundRaiseEndDateInUnixSeconds ${fundRaiseEndDateInUnixSeconds} exceeds max value. Must be less than 2^32 - 1`
       )
     }
     if (milestones.length < 1 || milestones.length > MILESTONES_MAX_LENGTH) {
-      throw Error(
+      throw new Error(
         `Invalid milestones length ${milestones.length}. Must be between 1 and ${MILESTONES_MAX_LENGTH}`
       )
     }
     for (const milestone of milestones) {
       if (milestone.endDateInUnixSeconds <= currentTimeUnixInSeconds) {
-        throw Error(
+        throw new Error(
           `Invalid milestone.endDateInUnixSeconds ${milestone.endDateInUnixSeconds} is a past date. Must be a future date`
         )
       }
       if (milestone.endDateInUnixSeconds > 2 ** 32 - 1) {
-        throw Error(
+        throw new Error(
           `Invalid milestone.endDateInUnixSeconds ${milestone.endDateInUnixSeconds} exceeds max value. Must be less than 2^32 - 1`
         )
       }
       if (milestone.title.length < 1 || milestone.title.length > 75) {
-        throw Error(
+        throw new Error(
           `Invalid milestone.title length ${milestone.title.length}. Must be between 1 and 75`
         )
       }
       if (milestone.payoutPercent < 1 || milestone.payoutPercent > 100) {
-        throw Error(
+        throw new Error(
           `Invalid milestone.payoutPercent ${milestone.payoutPercent}. Must be between 1 and 100`
         )
       }
@@ -425,7 +406,7 @@ export class Application {
       0
     )
     if (sumMilestonePayoutPercent !== 100) {
-      throw Error(
+      throw new Error(
         `Invalid milestone payoutPercent(s) sum ${sumMilestonePayoutPercent}. All milestone payoutPercent(s) must sum to exactly 100`
       )
     }
@@ -437,7 +418,7 @@ export class Application {
             milestones[index - 1].endDateInUnixSeconds
       )
     ) {
-      throw Error('Milestone end dates must be in ascending order')
+      throw new Error('Milestone end dates must be in ascending order')
     }
   }
 
@@ -445,22 +426,22 @@ export class Application {
     const { backerWallet, campaignId, fundAmountInDrops } = params
 
     if (backerWallet instanceof Wallet === false) {
-      throw Error(
+      throw new Error(
         `Invalid backerWallet ${backerWallet}. Must be an instance of Wallet`
       )
     }
     if (campaignId < 0 || campaignId > 2 ** 32 - 1) {
-      throw Error(
+      throw new Error(
         `Invalid campaignId ${campaignId}. Must be between 0 and 2^32 - 1`
       )
     }
     if (fundAmountInDrops <= FUND_CAMPAIGN_DEPOSIT_IN_DROPS) {
-      throw Error(
+      throw new Error(
         `Invalid fundAmountInDrops ${fundAmountInDrops}. Must be more than the fund campaign deposit of ${FUND_CAMPAIGN_DEPOSIT_IN_DROPS} drops`
       )
     }
     if (fundAmountInDrops > 2n ** 64n - 1n) {
-      throw Error(
+      throw new Error(
         `Invalid fundAmountInDrops ${fundAmountInDrops}. Must be less than 2^64 - 1 drops`
       )
     }
@@ -472,17 +453,17 @@ export class Application {
     const { backerWallet, campaignId, fundTransactionId } = params
 
     if (backerWallet instanceof Wallet === false) {
-      throw Error(
+      throw new Error(
         `Invalid backerWallet ${backerWallet}. Must be an instance of Wallet`
       )
     }
     if (campaignId < 0 || campaignId > 2 ** 32 - 1) {
-      throw Error(
+      throw new Error(
         `Invalid campaignId ${campaignId}. Must be between 0 and 2^32 - 1`
       )
     }
     if (fundTransactionId < 0 || fundTransactionId > 2 ** 32 - 1) {
-      throw Error(
+      throw new Error(
         `Invalid fundTransactionId ${fundTransactionId}. Must be between 0 and 2^32 - 1`
       )
     }

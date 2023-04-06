@@ -37,13 +37,15 @@ export class StateUtility {
     // @ts-expect-error - this is defined
     const { HookNamespaces } = accountInfoResponse.result.account_data
     if (!HookNamespaces) {
-      throw Error('No HookNamespaces found')
+      throw new Error(
+        'No HookNamespaces found. This means no data has been saved to the Hook State yet.'
+      )
     }
 
     // Step 2. Derive HookNamespace
     const hookNamespaceDerived = deriveHookNamespace(config.HOOK_NAMESPACE_SEED)
     if (!HookNamespaces.includes(hookNamespaceDerived)) {
-      throw Error(`HookNamespace not found for ${hookNamespaceDerived}`)
+      throw new Error(`HookNamespace not found for ${hookNamespaceDerived}`)
     }
 
     // Step 3. Get HookState from Hook Account using HookNamespace
@@ -76,9 +78,12 @@ export class StateUtility {
       hookState = await StateUtility.getHookState(client)
     } catch (error: Error | any) {
       if (
-        error?.message === 'No HookNamespaces found' ||
+        error?.message ===
+          'No HookNamespaces found. This means no data has been saved to the Hook State yet.' ||
         error?.message.includes('HookNamespace not found for')
       ) {
+        // This means no data has been saved to the Hook State yet so this is fine.
+        // We just need to initialize an empty ApplicationState.
         return new ApplicationState([]) // Return empty state
       }
       throw error
@@ -177,7 +182,7 @@ export class StateUtility {
             : fundTransactions
         )
       } else {
-        throw Error(`Invalid dataLookupFlag: ${dataLookupFlag}`)
+        throw new Error(`Invalid dataLookupFlag: ${dataLookupFlag}`)
       }
     }
 

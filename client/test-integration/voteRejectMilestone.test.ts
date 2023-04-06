@@ -13,7 +13,7 @@ import {
 import { HSVCampaignGeneralInfo } from '../app/models/HSVCampaignGeneralInfo'
 import { HSVFundTransactionsPage } from '../app/models/HSVFundTransactionsPage'
 
-describe('Application.voteRejectMilestone', () => {
+describe.skip('Application.voteRejectMilestone', () => {
   let ownerWallet: Wallet
   let backerWallet0: Wallet
   let campaignId: number

@@ -30,9 +30,13 @@ describe.skip('Application.createCampaign', () => {
     let hookStateResult
     try {
       hookStateResult = await StateUtility.getHookState(client)
-    } catch (error) {
-      if (error?.toString() === 'Error: No HookNamespaces found') {
-        // This means no data has been saved to the Hook State yet so this is fine. We just need to initialize the HookState.
+    } catch (error: Error | any) {
+      if (
+        error?.message ===
+        'No HookNamespaces found. This means no data has been saved to the Hook State yet.'
+      ) {
+        // This means no data has been saved to the Hook State yet so this is fine.
+        // We just need to initialize an empty HookState.
         hookStateResult = new HookState<HSVCampaignGeneralInfo>([])
       } else {
         throw error

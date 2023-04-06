@@ -18,7 +18,7 @@ int64_t hook(uint32_t reserved) {
     int64_t blob_len = otxn_field(SBUF(blob_buffer), sfBlob);
     uint8_t* blob_ptr = blob_buffer;
     trace(SBUF("blob (hex):"), blob_ptr, blob_len, 1);
-    blob_ptr += 1; // Skip over prefix length bytes: this will always be 1 byte for this all transaction modes
+    blob_ptr += 1; // Skip over prefix length bytes: this will always be 1 byte for all transaction modes
     TRACEVAR(blob_len);
 
     if (blob_len < 0) {
@@ -154,7 +154,7 @@ int64_t hook(uint32_t reserved) {
         total_reject_votes_for_current_milestone += 1;
         TRACEVAR(total_reject_votes_for_current_milestone);
 
-        /* Step 2. Check if reject votes for General Info is greater than or equal to 51% of total votes */
+        /* Step 2. Check if reject votes for General Info is greater than 50% (half) of total votes */
         uint32_t total_votes_for_current_milestone = UINT32_FROM_BUF(general_info_buffer + GENERAL_INFO_TOTAL_FUND_TRANSACTIONS_INDEX);
         uint32_t half_of_total_votes = total_votes_for_current_milestone / 2;
         TRACEVAR(total_votes_for_current_milestone);
@@ -163,7 +163,7 @@ int64_t hook(uint32_t reserved) {
         if (total_reject_votes_for_current_milestone > half_of_total_votes) {
             /* Step 2.1. Change General Info state to reject */
             general_info_buffer[GENERAL_INFO_STATE_INDEX] = CAMPAIGN_STATE_FAILED_MILESTONE_FLAG;
-            TRACESTR("campaign failed milestone!!")
+            TRACESTR("Campaign failed current milestone")
 
             /* Step 2.2. Get current milestone */
             uint8_t* current_milestone_ptr;
