@@ -12,6 +12,7 @@ export class HSVCampaignGeneralInfo extends BaseModel {
   totalAmountRewardedInDrops: UInt64
   totalReserveAmountInDrops: UInt64
   totalFundTransactions: UInt32
+  totalRejectVotesForCurrentMilestone: UInt32
   milestones: HSVMilestone[]
 
   constructor(
@@ -23,6 +24,7 @@ export class HSVCampaignGeneralInfo extends BaseModel {
     totalAmountRewardedInDrops: UInt64,
     totalReserveAmountInDrops: UInt64,
     totalFundTransactions: UInt32,
+    totalRejectVotesForCurrentMilestone: UInt32,
     milestones: HSVMilestone[]
   ) {
     super()
@@ -34,6 +36,8 @@ export class HSVCampaignGeneralInfo extends BaseModel {
     this.totalAmountRewardedInDrops = totalAmountRewardedInDrops
     this.totalReserveAmountInDrops = totalReserveAmountInDrops
     this.totalFundTransactions = totalFundTransactions
+    this.totalRejectVotesForCurrentMilestone =
+      totalRejectVotesForCurrentMilestone
     this.milestones = milestones
   }
 
@@ -69,6 +73,10 @@ export class HSVCampaignGeneralInfo extends BaseModel {
       },
       {
         field: 'totalFundTransactions',
+        type: 'uint32',
+      },
+      {
+        field: 'totalRejectVotesForCurrentMilestone',
         type: 'uint32',
       },
       {

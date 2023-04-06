@@ -9,6 +9,7 @@ import {
   MILESTONE_STATE_DERIVE_FLAG,
 } from '../app/constants'
 import { HSVCampaignGeneralInfo } from '../app/models/HSVCampaignGeneralInfo'
+import { HookState } from '../app/models/HookState'
 
 describe.skip('Application.createCampaign', () => {
   let ownerWallet: Wallet
@@ -26,7 +27,18 @@ describe.skip('Application.createCampaign', () => {
   })
 
   it('should create a campaign', async () => {
-    const beforeHookState = await StateUtility.getHookState(client)
+    let hookStateResult
+    try {
+      hookStateResult = await StateUtility.getHookState(client)
+    } catch (error) {
+      if (error?.toString() === 'Error: No HookNamespaces found') {
+        // This means no data has been saved to the Hook State yet so this is fine. We just need to initialize the HookState.
+        hookStateResult = new HookState<HSVCampaignGeneralInfo>([])
+      } else {
+        throw error
+      }
+    }
+    const beforeHookState = hookStateResult
     const beforeAppState = await StateUtility.getApplicationState(client)
 
     // init end dates in unix seconds
@@ -126,6 +138,7 @@ describe.skip('Application.createCampaign', () => {
       Application.getCreateCampaignDepositInDrops().toString()
     )
     expect(hsvGeneralInfo.totalFundTransactions).toBe(0)
+    expect(hsvGeneralInfo.totalRejectVotesForCurrentMilestone).toBe(0)
     expect(hsvGeneralInfo.milestones.length).toBe(milestones.length)
     for (let i = 0; i < hsvGeneralInfo.milestones.length; i++) {
       const hsvMilestone = hsvGeneralInfo.milestones[i]
@@ -134,7 +147,6 @@ describe.skip('Application.createCampaign', () => {
         milestones[i].endDateInUnixSeconds.toString()
       )
       expect(hsvMilestone.payoutPercent).toBe(milestones[i].payoutPercent)
-      expect(hsvMilestone.rejectVotes).toBe(0)
     }
 
     /* Step 2. Verify Application State contains latest changes */
@@ -143,10 +155,18 @@ describe.skip('Application.createCampaign', () => {
     )
     expect(campaignCreated).toBeDefined()
     expect(campaignCreated.id).toBe(campaignId)
+    expect(campaignCreated.state).toBe('fundRaise')
+    expect(campaignCreated.owner).toBe(ownerWallet.classicAddress)
     expect(campaignCreated.fundRaiseGoalInDrops).toBe(fundRaiseGoalInDrops)
     expect(campaignCreated.fundRaiseEndDateInUnixSeconds).toBe(
       fundRaiseEndDateInUnixSeconds
     )
+    expect(campaignCreated.totalAmountRaisedInDrops).toBe(BigInt(0))
+    expect(campaignCreated.totalAmountRewardedInDrops).toBe(BigInt(0))
+    expect(campaignCreated.totalReserveAmountInDrops).toBe(
+      Application.getCreateCampaignDepositInDrops()
+    )
+    expect(campaignCreated.totalRejectVotesForCurrentMilestone).toBe(0)
 
     expect(campaignCreated.milestones.length).toBe(milestones.length)
     for (let i = 0; i < campaignCreated.milestones.length; i++) {
@@ -156,7 +176,6 @@ describe.skip('Application.createCampaign', () => {
         milestones[i].endDateInUnixSeconds.toString()
       )
       expect(milestone.payoutPercent).toBe(milestones[i].payoutPercent)
-      expect(milestone.rejectVotes).toBe(0)
     }
 
     expect(campaignCreated.fundTransactions.length).toBe(0)

@@ -168,7 +168,6 @@ describe.skip('Application.fundCampaign', () => {
             milestones[i].endDateInUnixSeconds.toString()
           )
           expect(hsvMilestone.payoutPercent).toBe(milestones[i].payoutPercent)
-          expect(hsvMilestone.rejectVotes).toBe(0)
         }
       } else if (
         entry.key.dataLookupFlag ===
@@ -219,7 +218,6 @@ describe.skip('Application.fundCampaign', () => {
         milestones[i].endDateInUnixSeconds.toString()
       )
       expect(milestone.payoutPercent).toBe(milestones[i].payoutPercent)
-      expect(milestone.rejectVotes).toBe(0)
     }
 
     expect(campaignFunded.backers.length).toBe(1)
@@ -333,7 +331,6 @@ describe.skip('Application.fundCampaign', () => {
             milestones[i].endDateInUnixSeconds.toString()
           )
           expect(hsvMilestone.payoutPercent).toBe(milestones[i].payoutPercent)
-          expect(hsvMilestone.rejectVotes).toBe(0)
         }
       } else if (
         entry.key.dataLookupFlag ===
@@ -402,7 +399,6 @@ describe.skip('Application.fundCampaign', () => {
         milestones[i].endDateInUnixSeconds.toString()
       )
       expect(milestone.payoutPercent).toBe(milestones[i].payoutPercent)
-      expect(milestone.rejectVotes).toBe(0)
     }
 
     expect(campaignFunded.backers.length.toString()).toBe(
@@ -596,7 +592,6 @@ describe.skip('Application.fundCampaign', () => {
             milestones[i].endDateInUnixSeconds.toString()
           )
           expect(hsvMilestone.payoutPercent).toBe(milestones[i].payoutPercent)
-          expect(hsvMilestone.rejectVotes).toBe(0)
         }
       } else if (
         entry.key.dataLookupFlag ===
@@ -685,7 +680,6 @@ describe.skip('Application.fundCampaign', () => {
         milestones[i].endDateInUnixSeconds.toString()
       )
       expect(milestone.payoutPercent).toBe(milestones[i].payoutPercent)
-      expect(milestone.rejectVotes).toBe(0)
     }
 
     expect(campaignFunded.backers.length.toString()).toBe(

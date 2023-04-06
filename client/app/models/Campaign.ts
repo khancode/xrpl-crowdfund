@@ -15,6 +15,7 @@ export class Campaign {
   totalAmountRaisedInDrops: bigint
   totalAmountRewardedInDrops: bigint
   totalReserveAmountInDrops: bigint
+  totalRejectVotesForCurrentMilestone: number
   milestones: Milestone[]
   fundTransactions: FundTransaction[]
   backers: Backer[]
@@ -31,6 +32,7 @@ export class Campaign {
     totalAmountRaisedInDrops: bigint,
     totalAmountRewardedInDrops: bigint,
     totalReserveAmountInDrops: bigint,
+    totalRejectVotesForCurrentMilestone: number,
     milestones: Milestone[],
     fundTransactions: FundTransaction[],
     backers: Backer[]
@@ -46,6 +48,8 @@ export class Campaign {
     this.totalAmountRaisedInDrops = totalAmountRaisedInDrops
     this.totalAmountRewardedInDrops = totalAmountRewardedInDrops
     this.totalReserveAmountInDrops = totalReserveAmountInDrops
+    this.totalRejectVotesForCurrentMilestone =
+      totalRejectVotesForCurrentMilestone
     this.milestones = milestones
     this.fundTransactions = fundTransactions
     this.backers = backers

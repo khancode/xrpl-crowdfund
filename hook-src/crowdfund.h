@@ -21,8 +21,8 @@
 #define FUND_TRANSACTION_STATE_REJECT_FLAG 0x01
 #define FUND_TRANSACTION_STATE_REFUNDED_FLAG 0x02
 
-#define GENERAL_INFO_MAX_BYTES 222
-#define MILESTONE_BYTES 14
+#define GENERAL_INFO_MAX_BYTES 186
+#define MILESTONE_BYTES 10
 #define FUND_TRANSACTION_MAX_BYTES 246
 #define FUND_TRANSACTION_BYTES 49
 
@@ -35,13 +35,17 @@
 #define GENERAL_INFO_TOTAL_AMOUNT_REWARDED_IN_DROPS_INDEX 61
 #define GENERAL_INFO_TOTAL_RESERVE_AMOUNT_IN_DROPS_INDEX 69
 #define GENERAL_INFO_TOTAL_FUND_TRANSACTIONS_INDEX 77
-#define GENERAL_INFO_MILESTONES_INDEX 81
+#define GENERAL_INFO_TOTAL_REJECT_VOTES_FOR_CURRENT_MILESTONE_INDEX 81
+#define GENERAL_INFO_MILESTONES_INDEX 85
+#define GENERAL_INFO_MILESTONE_STATE_INDEX_OFFSET 0
+#define GENERAL_INFO_MILESTONE_END_DATE_IN_UNIX_SECONDS_INDEX_OFFSET 1
+#define GENERAL_INFO_MILESTONE_PAYOUT_PERCENT_INDEX_OFFSET 9
 
 // Fund Transaction state index positions
-#define FUND_TRANSACTION_ID_INDEX 0
-#define FUND_TRANSACTION_BACKER_INDEX 4
-#define FUND_TRANSACTION_STATE_INDEX 40
-#define FUND_TRANSACTION_AMOUNT_IN_DROPS_INDEX 41
+#define FUND_TRANSACTION_ID_INDEX_OFFSET 0
+#define FUND_TRANSACTION_BACKER_INDEX_OFFSET 4
+#define FUND_TRANSACTION_STATE_INDEX_OFFSET 40
+#define FUND_TRANSACTION_AMOUNT_IN_DROPS_INDEX_OFFSET 41
 
 #define CREATE_CAMPAIGN_DEPOSIT_IN_DROPS 100000000
 #define FUND_CAMPAIGN_DEPOSIT_IN_DROPS 10000000
@@ -138,3 +142,42 @@
       carry = (temp_sum >> 8); \
     } \
 }
+
+#define XRP_ADDRESS_EQUAL(addr1, addr2) \
+    ( \
+        ((addr1)[0] == (addr2)[0]) && \
+        ((addr1)[1] == (addr2)[1]) && \
+        ((addr1)[2] == (addr2)[2]) && \
+        ((addr1)[3] == (addr2)[3]) && \
+        ((addr1)[4] == (addr2)[4]) && \
+        ((addr1)[5] == (addr2)[5]) && \
+        ((addr1)[6] == (addr2)[6]) && \
+        ((addr1)[7] == (addr2)[7]) && \
+        ((addr1)[8] == (addr2)[8]) && \
+        ((addr1)[9] == (addr2)[9]) && \
+        ((addr1)[10] == (addr2)[10]) && \
+        ((addr1)[11] == (addr2)[11]) && \
+        ((addr1)[12] == (addr2)[12]) && \
+        ((addr1)[13] == (addr2)[13]) && \
+        ((addr1)[14] == (addr2)[14]) && \
+        ((addr1)[15] == (addr2)[15]) && \
+        ((addr1)[16] == (addr2)[16]) && \
+        ((addr1)[17] == (addr2)[17]) && \
+        ((addr1)[18] == (addr2)[18]) && \
+        ((addr1)[19] == (addr2)[19]) && \
+        ((addr1)[20] == (addr2)[20]) && \
+        ((addr1)[21] == (addr2)[21]) && \
+        ((addr1)[22] == (addr2)[22]) && \
+        ((addr1)[23] == (addr2)[23]) && \
+        ((addr1)[24] == (addr2)[24]) && \
+        ((addr1)[25] == (addr2)[25]) && \
+        ((addr1)[26] == (addr2)[26]) && \
+        ((addr1)[27] == (addr2)[27]) && \
+        ((addr1)[28] == (addr2)[28]) && \
+        ((addr1)[29] == (addr2)[29]) && \
+        ((addr1)[30] == (addr2)[30]) && \
+        ((addr1)[31] == (addr2)[31]) && \
+        ((addr1)[32] == (addr2)[32]) && \
+        ((addr1)[33] == (addr2)[33]) && \
+        ((addr1)[34] == (addr2)[34]) \
+    )

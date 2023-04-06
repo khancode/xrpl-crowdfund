@@ -25,9 +25,9 @@ describe('constants', () => {
 
       const fundRaiseEndDateInUnixSeconds = nextMonthInUnixSeconds
       const milestones: HSVMilestone[] = [
-        new HSVMilestone(0, next2MonthsInUnixSeconds, 25, 0),
-        new HSVMilestone(0, next3MonthsInUnixSeconds, 25, 0),
-        new HSVMilestone(0, next5MonthsInUnixSeconds, 25, 0),
+        new HSVMilestone(0, next2MonthsInUnixSeconds, 25),
+        new HSVMilestone(0, next3MonthsInUnixSeconds, 25),
+        new HSVMilestone(0, next5MonthsInUnixSeconds, 25),
       ]
 
       const milestonesStates = deriveMilestonesStates(

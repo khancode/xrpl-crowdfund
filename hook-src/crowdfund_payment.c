@@ -67,9 +67,8 @@ int64_t hook(uint32_t reserved) {
 
     /*
      * First byte indicates transaction mode flag:
-     * 0 => Create Campaign Mode
-     * 1 => Fund Campaign Mode
-     * etc TBD...
+     * 0x00 => Create Campaign Mode
+     * 0x01 => Fund Campaign Mode
      */
     uint8_t* memo_data_ptr = payload_ptr;
     uint8_t mode_flag = *payload_ptr++;
@@ -237,35 +236,35 @@ int64_t hook(uint32_t reserved) {
 
         /* Step 8. totalFundTransactions - already set to zero so skip it */
         general_info_index += 4;
+        
+        /* Step 9. totalRejectVotesForCurrentMilestone - already set to zero so skip it */
+        general_info_index += 4;
 
-        /* Step 9. Write milestones to General Info Buffer */
+        /* Step 10. Write milestones to General Info Buffer */
         general_info_buffer[general_info_index++] = milestones_len;
         uint8_t* milestones_iterator = milestones;
         for (int i = 0; GUARD(MILESTONES_MAX_LENGTH), i < milestones_len; i++) {
-            /* Step 9.1. milestone.state */
+            /* Step 10.1. milestone.state */
             general_info_buffer[general_info_index++] = MILESTONE_STATE_DERIVE_FLAG;
 
-            /* Step 9.2. milestone.endDateInUnixSeconds */
+            /* Step 10.2. milestone.endDateInUnixSeconds */
             uint64_t milestone_end_date_in_unix_seconds = UINT64_FROM_BUF(milestones_iterator);
             UINT64_TO_BUF(general_info_buffer + general_info_index, milestone_end_date_in_unix_seconds);
             general_info_index += 8;
             milestones_iterator += 8;
 
-            /* Step 9.3. milestone.payoutPercent */
+            /* Step 10.3. milestone.payoutPercent */
             uint8_t milestone_payout_percent = *milestones_iterator++;
             general_info_buffer[general_info_index++] = milestone_payout_percent;
-
-            /* Step 9.4. milestone.rejectVotes - already set to zero so skip it */
-            general_info_index += 4;
         }
 
-        /* Step 10. Verify General Info Buffer was filled correctly */
+        /* Step 11. Verify General Info Buffer was filled correctly */
         uint8_t expected_general_info_bytes = GENERAL_INFO_MAX_BYTES - ((MILESTONES_MAX_LENGTH - milestones_len) * MILESTONE_BYTES);
         if (general_info_index != expected_general_info_bytes) {
             rollback(SBUF("general_info_buffer was not filled correctly."), 400);
         }
 
-        /* Step 11. Write General Info Buffer to Hook State */
+        /* Step 12. Write General Info Buffer to Hook State */
         int64_t state_set_res = state_set(general_info_buffer, GENERAL_INFO_MAX_BYTES, SBUF(hook_state_key));
         TRACEVAR(state_set_res);
         if (state_set_res < 0) {
@@ -276,7 +275,6 @@ int64_t hook(uint32_t reserved) {
             }
         }
     } else if (mode_flag == MODE_FUND_CAMPAIGN_FLAG) {
-        // TODO: implement
         TRACESTR("Mode: Fund Campaign");
 
         /***** Validate/Parse Fields Steps *****/

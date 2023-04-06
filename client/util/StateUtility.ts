@@ -105,7 +105,6 @@ export class StateUtility {
               milestonesStates[index],
               milestone.endDateInUnixSeconds,
               milestone.payoutPercent,
-              milestone.rejectVotes,
               'OFF-LEDGER DATA'
             )
           }
@@ -123,6 +122,7 @@ export class StateUtility {
           generalInfo.totalAmountRaisedInDrops,
           generalInfo.totalAmountRewardedInDrops,
           generalInfo.totalReserveAmountInDrops,
+          generalInfo.totalRejectVotesForCurrentMilestone,
           milestones,
           [],
           []
