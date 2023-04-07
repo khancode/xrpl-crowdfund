@@ -181,3 +181,11 @@
         ((addr1)[33] == (addr2)[33]) && \
         ((addr1)[34] == (addr2)[34]) \
     )
+
+#define UINT64_TO_FLOAT(x) float_set(IEEE754_EXPONENT(x), IEEE754_MANTISSA(x))
+
+/* Macros to extract the mantissa and exponent of a floating-point number in the IEEE 754 binary64 format */
+// Returns int64_t
+#define IEEE754_MANTISSA(x) (((x) >> 0) & ((1ULL << 52) - 1))
+// Returns int32_t
+#define IEEE754_EXPONENT(x) (((x) >> 52) & ((1 << 11) - 1))

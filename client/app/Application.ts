@@ -40,6 +40,7 @@ import { MilestonePayload } from './models/MilestonePayload'
 import { Campaign } from './models/Campaign'
 import { VoteRejectMilestonePayload } from './models/VoteRejectMilestonePayload'
 import { VoteApproveMilestonePayload } from './models/VoteApproveMilestonePayload'
+import { RequestRefundPaymentPayload } from './models/RequestRefundPaymentPayload'
 
 export interface CreateCampaignParams {
   ownerWallet: Wallet
@@ -62,15 +63,17 @@ export interface FundCampaignParams {
   fundAmountInDrops: bigint
 }
 
-interface VoteParams {
+interface InvokeCampaignParams {
   backerWallet: Wallet
   campaignId: number
   fundTransactionId: number
 }
 
-export type VoteRejectMilestoneParams = VoteParams
+export type VoteRejectMilestoneParams = InvokeCampaignParams
 
-export type VoteApproveMilestoneParams = VoteParams
+export type VoteApproveMilestoneParams = InvokeCampaignParams
+
+export type RequestRefundPaymentParams = InvokeCampaignParams
 
 export class Application {
   static getCreateCampaignDepositInDrops(): bigint {
@@ -240,11 +243,11 @@ export class Application {
     }
 
     /* Step 1. Input validation */
-    this._validateVoteParams(params)
+    this._validateInvokeCampaignParams(params)
 
     const { backerWallet, campaignId, fundTransactionId } = params
 
-    /* Step 2. Create transaction Memo payload */
+    /* Step 2. Create transaction Blob payload */
     const voteRejectMilestonePayload = new VoteRejectMilestonePayload(
       fundTransactionId
     )
@@ -285,11 +288,11 @@ export class Application {
     }
 
     /* Step 1. Input validation */
-    this._validateVoteParams(params)
+    this._validateInvokeCampaignParams(params)
 
     const { backerWallet, campaignId, fundTransactionId } = params
 
-    /* Step 2. Create transaction Memo payload */
+    /* Step 2. Create transaction Blob payload */
     const voteApproveMilestonePayload = new VoteApproveMilestonePayload(
       fundTransactionId
     )
@@ -321,12 +324,53 @@ export class Application {
     )
   }
 
-  static async requestRefundPayment(client: Client): Promise<void> {
+  static async requestRefundPayment(
+    client: Client,
+    params: RequestRefundPaymentParams
+  ): Promise<bigint> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
     }
-    // TODO: implement
-    throw new Error('Not implemented')
+
+    /* Step 1. Input validation */
+    this._validateInvokeCampaignParams(params)
+
+    const { backerWallet, campaignId, fundTransactionId } = params
+
+    /* Step 2. Create transaction Blob payload */
+    const requestRefundPaymentPayload = new RequestRefundPaymentPayload(
+      fundTransactionId
+    )
+
+    /* Step 3. Submit Invoke transaction with RequestRefundPaymentPayload */
+    const requestRefundPaymentTx: Transaction = {
+      // @ts-expect-error - Invoke transaction type is supported in Hooks Testnet v3
+      TransactionType: 'Invoke',
+      Account: backerWallet.address,
+      Destination: HOOK_ACCOUNT_WALLET.address,
+      DestinationTag: campaignId,
+      Blob: requestRefundPaymentPayload.encode(),
+    }
+
+    await prepareTransactionV3(requestRefundPaymentTx)
+
+    const requestRefundPaymentTxResponse = await client.submitAndWait(
+      requestRefundPaymentTx,
+      {
+        autofill: true,
+        wallet: backerWallet,
+      }
+    )
+
+    /* Step 4. Check Invoke transaction result */
+    const acceptMessageHex = this._validateTxResponse(
+      requestRefundPaymentTxResponse,
+      'requestRefundPayment'
+    )
+
+    /* Step 5. Return refundAmountInDrops from transaction response */
+    const refundAmountInDrops = BigInt('0x' + acceptMessageHex)
+    return refundAmountInDrops
   }
 
   static async requestMilestonePayoutPayment(client: Client): Promise<void> {
@@ -500,7 +544,7 @@ export class Application {
     }
   }
 
-  private static _validateVoteParams(params: VoteParams) {
+  private static _validateInvokeCampaignParams(params: InvokeCampaignParams) {
     const { backerWallet, campaignId, fundTransactionId } = params
 
     if (backerWallet instanceof Wallet === false) {
