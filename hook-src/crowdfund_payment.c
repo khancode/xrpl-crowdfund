@@ -228,7 +228,7 @@ int64_t hook(uint32_t reserved) {
         UINT64_TO_BUF(general_info_buffer + general_info_index, fund_raise_end_date_in_unix_seconds);
         general_info_index += 8;
 
-        /* Step 6. totalAmountRaisedInDrops and totalAmountRewardedInDrops - already set to zero so skip them */
+        /* Step 6. totalAmountRaisedInDrops and totalAmountNonRefundableInDrops - already set to zero so skip them */
         general_info_index += 16;
 
         /* Step 7. Write totalReserveAmountInDrops to General Info Buffer */

@@ -13,7 +13,7 @@ export class Campaign {
   fundRaiseGoalInDrops: bigint // Use BigInt to support 64-bit unsigned integer values
   fundRaiseEndDateInUnixSeconds: bigint
   totalAmountRaisedInDrops: bigint
-  totalAmountRewardedInDrops: bigint
+  totalAmountNonRefundableInDrops: bigint // Total amount of funds that don't count towards a refund payment (i.e. reserved for milestone payouts)
   totalReserveAmountInDrops: bigint
   totalRejectVotesForCurrentMilestone: number
   milestones: Milestone[]
@@ -30,7 +30,7 @@ export class Campaign {
     fundRaiseGoalInDrops: bigint,
     fundRaiseEndDateInUnixSeconds: bigint,
     totalAmountRaisedInDrops: bigint,
-    totalAmountRewardedInDrops: bigint,
+    totalAmountNonRefundableInDrops: bigint,
     totalReserveAmountInDrops: bigint,
     totalRejectVotesForCurrentMilestone: number,
     milestones: Milestone[],
@@ -46,7 +46,7 @@ export class Campaign {
     this.fundRaiseGoalInDrops = fundRaiseGoalInDrops
     this.fundRaiseEndDateInUnixSeconds = fundRaiseEndDateInUnixSeconds
     this.totalAmountRaisedInDrops = totalAmountRaisedInDrops
-    this.totalAmountRewardedInDrops = totalAmountRewardedInDrops
+    this.totalAmountNonRefundableInDrops = totalAmountNonRefundableInDrops
     this.totalReserveAmountInDrops = totalReserveAmountInDrops
     this.totalRejectVotesForCurrentMilestone =
       totalRejectVotesForCurrentMilestone

@@ -152,7 +152,9 @@ describe.skip('Application.fundCampaign', () => {
         expect(hsvGeneralInfo.totalAmountRaisedInDrops.toString()).toBe(
           fundAmountWithoutDepositFeeInDrops.toString()
         )
-        expect(hsvGeneralInfo.totalAmountRewardedInDrops.toString()).toBe('0')
+        expect(hsvGeneralInfo.totalAmountNonRefundableInDrops.toString()).toBe(
+          '0'
+        )
         expect(hsvGeneralInfo.totalReserveAmountInDrops.toString()).toBe(
           (
             Application.getCreateCampaignDepositInDrops() +
@@ -313,7 +315,9 @@ describe.skip('Application.fundCampaign', () => {
         expect(hsvGeneralInfo.totalAmountRaisedInDrops.toString()).toBe(
           (fundAmountWithoutDepositFeeInDrops * backersLength).toString()
         )
-        expect(hsvGeneralInfo.totalAmountRewardedInDrops.toString()).toBe('0')
+        expect(hsvGeneralInfo.totalAmountNonRefundableInDrops.toString()).toBe(
+          '0'
+        )
         expect(hsvGeneralInfo.totalReserveAmountInDrops.toString()).toBe(
           (
             Application.getCreateCampaignDepositInDrops() +
@@ -574,7 +578,9 @@ describe.skip('Application.fundCampaign', () => {
         expect(hsvGeneralInfo.totalAmountRaisedInDrops.toString()).toBe(
           (fundAmountWithoutDepositFeeInDrops * backersLength * 3n).toString()
         )
-        expect(hsvGeneralInfo.totalAmountRewardedInDrops.toString()).toBe('0')
+        expect(hsvGeneralInfo.totalAmountNonRefundableInDrops.toString()).toBe(
+          '0'
+        )
         expect(hsvGeneralInfo.totalReserveAmountInDrops.toString()).toBe(
           (
             Application.getCreateCampaignDepositInDrops() +

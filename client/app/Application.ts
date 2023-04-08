@@ -41,6 +41,7 @@ import { Campaign } from './models/Campaign'
 import { VoteRejectMilestonePayload } from './models/VoteRejectMilestonePayload'
 import { VoteApproveMilestonePayload } from './models/VoteApproveMilestonePayload'
 import { RequestRefundPaymentPayload } from './models/RequestRefundPaymentPayload'
+import { RequestMilestonePayoutPaymentPayload } from './models/RequestMilestonePayoutPaymentPayload'
 
 export interface CreateCampaignParams {
   ownerWallet: Wallet
@@ -74,6 +75,12 @@ export type VoteRejectMilestoneParams = InvokeCampaignParams
 export type VoteApproveMilestoneParams = InvokeCampaignParams
 
 export type RequestRefundPaymentParams = InvokeCampaignParams
+
+export interface RequestMilestonePayoutPaymentParams {
+  ownerWallet: Wallet
+  campaignId: number
+  milestoneIndex: number
+}
 
 export class Application {
   static getCreateCampaignDepositInDrops(): bigint {
@@ -373,12 +380,52 @@ export class Application {
     return refundAmountInDrops
   }
 
-  static async requestMilestonePayoutPayment(client: Client): Promise<void> {
+  static async requestMilestonePayoutPayment(
+    client: Client,
+    params: RequestMilestonePayoutPaymentParams
+  ): Promise<bigint> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
     }
-    // TODO: implement
-    throw new Error('Not implemented')
+
+    /* Step 1. Input validation */
+    this._validateRequestMilestonePayoutPaymentParams(params)
+
+    const { ownerWallet, campaignId, milestoneIndex } = params
+
+    /* Step 2. Create transaction Blob payload */
+    const requestMilestonePayoutPaymentPayload =
+      new RequestMilestonePayoutPaymentPayload(milestoneIndex)
+
+    /* Step 3. Submit Invoke transaction with RequestMilestonePayoutPaymentPayload */
+    const requestMilestonePaymentTx: Transaction = {
+      // @ts-expect-error - Invoke transaction type is supported in Hooks Testnet v3
+      TransactionType: 'Invoke',
+      Account: ownerWallet.address,
+      Destination: HOOK_ACCOUNT_WALLET.address,
+      DestinationTag: campaignId,
+      Blob: requestMilestonePayoutPaymentPayload.encode(),
+    }
+
+    await prepareTransactionV3(requestMilestonePaymentTx)
+
+    const requestMilestonePayoutPaymentTxResponse = await client.submitAndWait(
+      requestMilestonePaymentTx,
+      {
+        autofill: true,
+        wallet: ownerWallet,
+      }
+    )
+
+    /* Step 4. Check Invoke transaction result */
+    const acceptMessageHex = this._validateTxResponse(
+      requestMilestonePayoutPaymentTxResponse,
+      'requestMilestonePayoutPayment'
+    )
+
+    /* Step 5. Return payoutAmountInDrops from transaction response */
+    const payoutAmountInDrops = BigInt('0x' + acceptMessageHex)
+    return payoutAmountInDrops
   }
 
   private static _validateTxResponse(
@@ -560,6 +607,30 @@ export class Application {
     if (fundTransactionId < 0 || fundTransactionId > 2 ** 32 - 1) {
       throw new Error(
         `Invalid fundTransactionId ${fundTransactionId}. Must be between 0 and 2^32 - 1`
+      )
+    }
+  }
+
+  private static _validateRequestMilestonePayoutPaymentParams(
+    params: RequestMilestonePayoutPaymentParams
+  ) {
+    const { ownerWallet, campaignId, milestoneIndex } = params
+
+    if (ownerWallet instanceof Wallet === false) {
+      throw new Error(
+        `Invalid ownerWallet ${ownerWallet}. Must be an instance of Wallet`
+      )
+    }
+    if (campaignId < 0 || campaignId > 2 ** 32 - 1) {
+      throw new Error(
+        `Invalid campaignId ${campaignId}. Must be between 0 and 2^32 - 1`
+      )
+    }
+    if (milestoneIndex < 0 || milestoneIndex > MILESTONES_MAX_LENGTH - 1) {
+      throw new Error(
+        `Invalid milestoneIndex ${milestoneIndex}. Must be between 0 and ${
+          MILESTONES_MAX_LENGTH - 1
+        }`
       )
     }
   }

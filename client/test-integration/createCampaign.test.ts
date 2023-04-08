@@ -137,7 +137,7 @@ describe.skip('Application.createCampaign', () => {
       fundRaiseEndDateInUnixSeconds.toString()
     )
     expect(hsvGeneralInfo.totalAmountRaisedInDrops.toString()).toBe('0')
-    expect(hsvGeneralInfo.totalAmountRewardedInDrops.toString()).toBe('0')
+    expect(hsvGeneralInfo.totalAmountNonRefundableInDrops.toString()).toBe('0')
     expect(hsvGeneralInfo.totalReserveAmountInDrops.toString()).toBe(
       Application.getCreateCampaignDepositInDrops().toString()
     )
@@ -166,7 +166,7 @@ describe.skip('Application.createCampaign', () => {
       fundRaiseEndDateInUnixSeconds
     )
     expect(campaignCreated.totalAmountRaisedInDrops).toBe(BigInt(0))
-    expect(campaignCreated.totalAmountRewardedInDrops).toBe(BigInt(0))
+    expect(campaignCreated.totalAmountNonRefundableInDrops).toBe(BigInt(0))
     expect(campaignCreated.totalReserveAmountInDrops).toBe(
       Application.getCreateCampaignDepositInDrops()
     )

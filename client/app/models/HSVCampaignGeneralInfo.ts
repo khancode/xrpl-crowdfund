@@ -9,7 +9,7 @@ export class HSVCampaignGeneralInfo extends BaseModel {
   fundRaiseGoalInDrops: UInt64
   fundRaiseEndDateInUnixSeconds: UInt64
   totalAmountRaisedInDrops: UInt64
-  totalAmountRewardedInDrops: UInt64
+  totalAmountNonRefundableInDrops: UInt64
   totalReserveAmountInDrops: UInt64
   totalFundTransactions: UInt32
   totalRejectVotesForCurrentMilestone: UInt32
@@ -21,7 +21,7 @@ export class HSVCampaignGeneralInfo extends BaseModel {
     fundRaiseGoalInDrops: UInt64,
     fundRaiseEndDateInUnixSeconds: UInt64,
     totalAmountRaisedInDrops: UInt64,
-    totalAmountRewardedInDrops: UInt64,
+    totalAmountNonRefundableInDrops: UInt64,
     totalReserveAmountInDrops: UInt64,
     totalFundTransactions: UInt32,
     totalRejectVotesForCurrentMilestone: UInt32,
@@ -33,7 +33,7 @@ export class HSVCampaignGeneralInfo extends BaseModel {
     this.fundRaiseGoalInDrops = fundRaiseGoalInDrops
     this.fundRaiseEndDateInUnixSeconds = fundRaiseEndDateInUnixSeconds
     this.totalAmountRaisedInDrops = totalAmountRaisedInDrops
-    this.totalAmountRewardedInDrops = totalAmountRewardedInDrops
+    this.totalAmountNonRefundableInDrops = totalAmountNonRefundableInDrops
     this.totalReserveAmountInDrops = totalReserveAmountInDrops
     this.totalFundTransactions = totalFundTransactions
     this.totalRejectVotesForCurrentMilestone =
@@ -64,7 +64,7 @@ export class HSVCampaignGeneralInfo extends BaseModel {
         type: 'uint64',
       },
       {
-        field: 'totalAmountRewardedInDrops',
+        field: 'totalAmountNonRefundableInDrops',
         type: 'uint64',
       },
       {

@@ -17,12 +17,30 @@ export type CampaignState =
   | 'milestone9'
   | 'milestone10'
   | 'failedFundRaise'
-  | 'failedMilestone'
+  | 'failedMilestone1'
+  | 'failedMilestone2'
+  | 'failedMilestone3'
+  | 'failedMilestone4'
+  | 'failedMilestone5'
+  | 'failedMilestone6'
+  | 'failedMilestone7'
+  | 'failedMilestone8'
+  | 'failedMilestone9'
+  | 'failedMilestone10'
   | 'completed'
 
 export type CampaignStateFlag =
   | typeof CAMPAIGN_STATE_DERIVE_FLAG
-  | typeof CAMPAIGN_STATE_FAILED_MILESTONE_FLAG
+  | typeof CAMPAIGN_STATE_FAILED_MILESTONE_1_FLAG
+  | typeof CAMPAIGN_STATE_FAILED_MILESTONE_2_FLAG
+  | typeof CAMPAIGN_STATE_FAILED_MILESTONE_3_FLAG
+  | typeof CAMPAIGN_STATE_FAILED_MILESTONE_4_FLAG
+  | typeof CAMPAIGN_STATE_FAILED_MILESTONE_5_FLAG
+  | typeof CAMPAIGN_STATE_FAILED_MILESTONE_6_FLAG
+  | typeof CAMPAIGN_STATE_FAILED_MILESTONE_7_FLAG
+  | typeof CAMPAIGN_STATE_FAILED_MILESTONE_8_FLAG
+  | typeof CAMPAIGN_STATE_FAILED_MILESTONE_9_FLAG
+  | typeof CAMPAIGN_STATE_FAILED_MILESTONE_10_FLAG
 
 export type MilestoneState =
   | 'unstarted'
@@ -47,7 +65,16 @@ export const HOOK_ACCOUNT_WALLET = Wallet.fromSeed(config.HOOK_ACCOUNT.seed)
 
 // Campaign States
 export const CAMPAIGN_STATE_DERIVE_FLAG = 0x00
-export const CAMPAIGN_STATE_FAILED_MILESTONE_FLAG = 0x01
+export const CAMPAIGN_STATE_FAILED_MILESTONE_1_FLAG = 0x01
+export const CAMPAIGN_STATE_FAILED_MILESTONE_2_FLAG = 0x02
+export const CAMPAIGN_STATE_FAILED_MILESTONE_3_FLAG = 0x03
+export const CAMPAIGN_STATE_FAILED_MILESTONE_4_FLAG = 0x04
+export const CAMPAIGN_STATE_FAILED_MILESTONE_5_FLAG = 0x05
+export const CAMPAIGN_STATE_FAILED_MILESTONE_6_FLAG = 0x06
+export const CAMPAIGN_STATE_FAILED_MILESTONE_7_FLAG = 0x07
+export const CAMPAIGN_STATE_FAILED_MILESTONE_8_FLAG = 0x08
+export const CAMPAIGN_STATE_FAILED_MILESTONE_9_FLAG = 0x09
+export const CAMPAIGN_STATE_FAILED_MILESTONE_10_FLAG = 0x0a
 
 // Milestone States
 export const MILESTONE_STATE_DERIVE_FLAG = 0x00
@@ -81,10 +108,23 @@ export const TITLE_MAX_LENGTH = 75
 export const DESCRIPTION_MAX_LENGTH = 2500
 export const OVERVIEW_URL_MAX_LENGTH = 2300
 
-// Fees
-// TODO: Need to add the fee for the second part of the campaign creation (Invoke transaction)
-export const CREATE_CAMPAIGN_DEPOSIT_IN_DROPS = 100000000n
-export const FUND_CAMPAIGN_DEPOSIT_IN_DROPS = 10000000n
+/*
+  Fees:
+    Owner Reserve Fee = 50 XRP
+    Transaction Fee = 10 drops
+  
+  Create Campaign Deposit:
+    2 Owner Reserve Fee + 10 transaction fees (for milestone payments; Max 10 milestones)
+    = 100 XRP + 100 drops
+    = 100000100 drops
+  
+  Fund Campaign Deposit:
+    1/5 Owner Reserve Fee + 1 transaction fee (for refund payment)
+    = 10 XRP + 1 drop
+    = 10000010 drops
+*/
+export const CREATE_CAMPAIGN_DEPOSIT_IN_DROPS = 100000100n
+export const FUND_CAMPAIGN_DEPOSIT_IN_DROPS = 10000010n
 
 // convert campaign state code to campaign state
 export const deriveCampaignState = (
@@ -108,8 +148,11 @@ export const deriveCampaignState = (
     }
 
     return 'completed'
-  } else if (generalInfo.state === CAMPAIGN_STATE_FAILED_MILESTONE_FLAG) {
-    return 'failedMilestone'
+  } else if (
+    generalInfo.state >= CAMPAIGN_STATE_FAILED_MILESTONE_1_FLAG &&
+    generalInfo.state <= CAMPAIGN_STATE_FAILED_MILESTONE_10_FLAG
+  ) {
+    return `failedMilestone${generalInfo.state}` as CampaignState
   }
 
   throw new Error('Invalid campaign state code')

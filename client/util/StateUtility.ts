@@ -125,7 +125,7 @@ export class StateUtility {
           generalInfo.fundRaiseGoalInDrops,
           generalInfo.fundRaiseEndDateInUnixSeconds,
           generalInfo.totalAmountRaisedInDrops,
-          generalInfo.totalAmountRewardedInDrops,
+          generalInfo.totalAmountNonRefundableInDrops,
           generalInfo.totalReserveAmountInDrops,
           generalInfo.totalRejectVotesForCurrentMilestone,
           milestones,
