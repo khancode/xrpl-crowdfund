@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "A decentralized crowdfunding platform on the XRP Ledger (XRPL) using Hooks",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/khancode/xrpl-crowdfund.git"
+  },
   "scripts": {
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "jest --config=jest.config.unit.js --coverage",
