@@ -1,752 +1,391 @@
-import { Wallet } from 'xrpl'
-import { Application } from '../app/Application'
-import { fundWallet } from '../util/fundWallet'
+import accounts from './accounts.json'
 import { client, connectClient, disconnectClient } from '../util/xrplClient'
+import { Wallet } from 'xrpl'
+import {
+  Application,
+  CreateCampaignParams,
+  FundCampaignParams,
+} from '../app/Application'
 import { StateUtility } from '../util/StateUtility'
 import {
-  CAMPAIGN_STATE_DERIVE_FLAG,
-  DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG,
-  DATA_LOOKUP_GENERAL_INFO_FLAG,
-  FUND_TRANSACTION_STATE_APPROVE_FLAG,
-  MILESTONE_STATE_DERIVE_FLAG,
-} from '../app/constants'
+  dateOffsetToUnixTimestampInSeconds,
+  getHookStateEntriesOfCampaign,
+  cloneHSVCampaignGeneralInfo,
+  verifyHookStateKey,
+  cloneHSVFundTransactionsPage,
+} from './testUtil'
 import { HSVCampaignGeneralInfo } from '../app/models/HSVCampaignGeneralInfo'
 import { HSVFundTransactionsPage } from '../app/models/HSVFundTransactionsPage'
+import {
+  FUND_CAMPAIGN_DEPOSIT_IN_DROPS,
+  FUND_TRANSACTION_STATE_APPROVE_FLAG,
+} from '../app/constants'
+import { HSVFundTransaction } from '../app/models/HSVFundTransaction'
 
-describe.skip('Application.fundCampaign', () => {
-  let ownerWallet: Wallet
-  let backerWallet0: Wallet
+describe('fundCampaign', () => {
+  let owner: Wallet
+  let backer1: Wallet
+  let backer2: Wallet
+  let backer3: Wallet
   let campaignId: number
-  let fundRaiseGoalInDrops: bigint
-  let fundRaiseEndDateInUnixSeconds: bigint
-  let milestones: Array<{
-    endDateInUnixSeconds: bigint
-    title: string
-    payoutPercent: number
-  }>
 
   beforeAll(async () => {
     await connectClient()
-  })
 
-  beforeEach(async () => {
-    // NOTE: Must wait 10 seconds before funding a new wallet again on Hooks Testnet v3.
-    ownerWallet = await fundWallet()
-    // sleep 10 seconds before funding a new wallet again on Hooks Testnet v3.
-    await new Promise((resolve) => setTimeout(resolve, 10000))
-    backerWallet0 = await fundWallet()
-    // sleep 2 seconds to allow fund wallet changes to be validated on the ledger
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    const fundCampaignAccounts = accounts['fundCampaign']
+    owner = Wallet.fromSeed(fundCampaignAccounts[0].seed)
+    backer1 = Wallet.fromSeed(fundCampaignAccounts[1].seed)
+    backer2 = Wallet.fromSeed(fundCampaignAccounts[2].seed)
+    backer3 = Wallet.fromSeed(fundCampaignAccounts[3].seed)
 
-    // init end dates in unix seconds
-    const now = new Date()
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-    const next2Months = new Date(now.getFullYear(), now.getMonth() + 2, 1)
-    const next3Months = new Date(now.getFullYear(), now.getMonth() + 3, 1)
-    const next5Months = new Date(now.getFullYear(), now.getMonth() + 5, 1)
-    const nextMonthInUnixSeconds = BigInt(
-      Math.floor(nextMonth.getTime() / 1000)
-    )
-    const next2MonthsInUnixSeconds = BigInt(
-      Math.floor(next2Months.getTime() / 1000)
-    )
-    const next3MonthsInUnixSeconds = BigInt(
-      Math.floor(next3Months.getTime() / 1000)
-    )
-    const next5MonthsInUnixSeconds = BigInt(
-      Math.floor(next5Months.getTime() / 1000)
-    )
+    const params: CreateCampaignParams = {
+      ownerWallet: owner,
+      depositInDrops: 100000100n,
+      title: 'OFF-LEDGER DATA',
+      description: 'OFF-LEDGER DATA',
+      overviewURL: 'OFF-LEDGER DATA',
+      fundRaiseGoalInDrops: 100000000n,
+      fundRaiseEndDateInUnixSeconds:
+        dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
+      milestones: [
+        {
+          endDateInUnixSeconds:
+            dateOffsetToUnixTimestampInSeconds('2_MONTH_AFTER'),
+          title: 'OFF-LEDGER DATA',
+          payoutPercent: 25,
+        },
+        {
+          endDateInUnixSeconds:
+            dateOffsetToUnixTimestampInSeconds('3_MONTH_AFTER'),
+          title: 'OFF-LEDGER DATA',
+          payoutPercent: 25,
+        },
+        {
+          endDateInUnixSeconds:
+            dateOffsetToUnixTimestampInSeconds('5_MONTH_AFTER'),
+          title: 'OFF-LEDGER DATA',
+          payoutPercent: 50,
+        },
+      ],
+    }
 
-    const depositInDrops = Application.getCreateCampaignDepositInDrops()
-    const title =
-      'title ioasej pf asiopefja sjeopfjopaisjef aoipsj eofjasoej fopas ejofjaos i'
-    const description =
-      "The Ultimate Fighting Championship (UFC) is the world's premier mixed martial arts (MMA) organization, showcasing a unique blend of striking, grappling, and submission techniques from various martial arts disciplines. Founded in 1993, the UFC has grown exponentially over the years, transforming from a niche sport into a global phenomenon, reaching millions of fans worldwide. The UFC was initially created as a competition to determine the most effective martial art, pitting practitioners of different disciplines against each other in a no-holds-barred format. However, over time, the organization evolved, introducing weight classes and implementing a comprehensive set of rules and regulations, prioritizing the safety and well-being of the fighters. Today, the UFC operates under the unified rules of MMA, which have been widely adopted across the sport. These rules dictate the legal striking techniques, grappling positions, and submissions, as well as the appropriate attire and protective gear for fighters. The UFC also adheres to strict drug testing protocols to ensure a level playing field for all competitors."
-    const overviewURL = 'https://www.google.com'
-    fundRaiseGoalInDrops = BigInt(25000000000)
-    fundRaiseEndDateInUnixSeconds = nextMonthInUnixSeconds
-    milestones = [
-      {
-        endDateInUnixSeconds: next2MonthsInUnixSeconds,
-        title: 'first milestone',
-        payoutPercent: 25,
-      },
-      {
-        endDateInUnixSeconds: next3MonthsInUnixSeconds,
-        title: 'second milestone',
-        payoutPercent: 25,
-      },
-      {
-        endDateInUnixSeconds: next5MonthsInUnixSeconds,
-        title: 'third/final milestone',
-        payoutPercent: 50,
-      },
-    ]
-
-    campaignId = await Application.createCampaign(client, {
-      ownerWallet,
-      depositInDrops,
-      title,
-      description,
-      overviewURL,
-      fundRaiseGoalInDrops,
-      fundRaiseEndDateInUnixSeconds,
-      milestones,
-    })
+    campaignId = await Application.createCampaign(client, params)
   })
 
   afterAll(async () => {
     await disconnectClient()
   })
 
-  it('should fund a new campaign (no backers) with a single backer', async () => {
-    const beforeHookState = await StateUtility.getHookState(client)
-    const beforeAppState = await StateUtility.getApplicationState(client)
+  it('should fund a campaign with no backers', async () => {
+    // Get the current HookState
+    const hookStateBefore = await StateUtility.getHookState(client)
+    const hookStateEntriesBefore = getHookStateEntriesOfCampaign(
+      hookStateBefore,
+      campaignId
+    )
+    const hsvGeneralInfoBefore = hookStateEntriesBefore.generalInfo.value
+      .decoded as HSVCampaignGeneralInfo
+    const hsvFundTransactionsPageBefore = null // expected to be null
 
-    const fundAmountWithoutDepositFeeInDrops = BigInt(50000000)
-    const fundAmountInDrops =
-      Application.getFundCampaignDepositInDrops() +
-      fundAmountWithoutDepositFeeInDrops
-    await Application.fundCampaign(client, {
-      backerWallet: backerWallet0,
+    const params: FundCampaignParams = {
+      backerWallet: backer1,
       campaignId,
-      fundAmountInDrops,
+      fundAmountInDrops:
+        400000000n + Application.getFundCampaignDepositInDrops(),
+    }
+    const fundTransactionId = await Application.fundCampaign(client, params)
+
+    // Verify that the fund transaction was saved to Hook State
+    const hookStateAfter = await StateUtility.getHookState(client)
+
+    const newHookStateEntries = getHookStateEntriesOfCampaign(
+      hookStateAfter,
+      campaignId
+    )
+
+    const hsvGeneralInfoAfter = newHookStateEntries.generalInfo.value
+      .decoded as HSVCampaignGeneralInfo
+
+    const hsvFundTransactionsPageAfter = newHookStateEntries
+      .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
+
+    expect(fundTransactionId).toBe(0)
+    expect(hookStateAfter.entries.length).toBe(
+      hookStateBefore.entries.length + 1
+    )
+    expect(newHookStateEntries.generalInfo).toBeDefined()
+    expect(newHookStateEntries.fundTransactionsPages.length).toBe(1)
+
+    verifyHookStateKey(newHookStateEntries.generalInfo.key, {
+      destinationTag: campaignId,
+      dataLookupFlag: 0n,
     })
 
-    const afterHookState = await StateUtility.getHookState(client)
-    const afterHookStateEntries = afterHookState.entries.filter(
-      (entry) => entry.key.destinationTag === campaignId
-    )
-
-    const afterAppState = await StateUtility.getApplicationState(client)
-    const campaignFunded = afterAppState.campaigns.find(
-      (campaign) => campaign.id === campaignId
-    )
-    if (!campaignFunded) {
-      throw new Error(`Campaign not found in application state: ${campaignId}`)
-    }
-
-    /* Step 1. Verify Hook State contains latest changes */
-    expect(afterHookState.entries.length).toBe(
-      beforeHookState.entries.length + 1
-    )
-    expect(afterHookStateEntries.length).toBe(2)
-
-    const expectedDataLookupFlags: bigint[] = [
-      DATA_LOOKUP_GENERAL_INFO_FLAG,
-      DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG,
-    ]
-    const actualDataLookupFlags: bigint[] = []
-    afterHookStateEntries.forEach((entry) => {
-      actualDataLookupFlags.push(entry.key.dataLookupFlag)
-      if (entry.key.dataLookupFlag === DATA_LOOKUP_GENERAL_INFO_FLAG) {
-        const hsvGeneralInfo = entry.value.decoded as HSVCampaignGeneralInfo
-        expect(hsvGeneralInfo.state).toBe(CAMPAIGN_STATE_DERIVE_FLAG)
-        expect(hsvGeneralInfo.owner).toBe(ownerWallet.address)
-        expect(hsvGeneralInfo.fundRaiseGoalInDrops.toString()).toBe(
-          fundRaiseGoalInDrops.toString()
-        )
-        expect(hsvGeneralInfo.fundRaiseEndDateInUnixSeconds.toString()).toBe(
-          fundRaiseEndDateInUnixSeconds.toString()
-        )
-        expect(hsvGeneralInfo.totalAmountRaisedInDrops.toString()).toBe(
-          fundAmountWithoutDepositFeeInDrops.toString()
-        )
-        expect(hsvGeneralInfo.totalAmountNonRefundableInDrops.toString()).toBe(
-          '0'
-        )
-        expect(hsvGeneralInfo.totalReserveAmountInDrops.toString()).toBe(
-          (
-            Application.getCreateCampaignDepositInDrops() +
-            Application.getFundCampaignDepositInDrops()
-          ).toString()
-        )
-        expect(hsvGeneralInfo.totalFundTransactions).toBe(1)
-        expect(hsvGeneralInfo.milestones.length).toBe(milestones.length)
-        for (let i = 0; i < hsvGeneralInfo.milestones.length; i++) {
-          const hsvMilestone = hsvGeneralInfo.milestones[i]
-          expect(hsvMilestone.state).toBe(MILESTONE_STATE_DERIVE_FLAG)
-          expect(hsvMilestone.endDateInUnixSeconds.toString()).toBe(
-            milestones[i].endDateInUnixSeconds.toString()
-          )
-          expect(hsvMilestone.payoutPercent).toBe(milestones[i].payoutPercent)
-        }
-      } else if (
-        entry.key.dataLookupFlag ===
-        DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG
-      ) {
-        const hsvFundTransactionsPage = entry.value
-          .decoded as HSVFundTransactionsPage
-        expect(hsvFundTransactionsPage.fundTransactions.length).toBe(1)
-        expect(hsvFundTransactionsPage.fundTransactions[0].id).toBe(0)
-        expect(hsvFundTransactionsPage.fundTransactions[0].account).toBe(
-          backerWallet0.address
-        )
-        expect(hsvFundTransactionsPage.fundTransactions[0].state).toBe(
-          FUND_TRANSACTION_STATE_APPROVE_FLAG
-        )
-        expect(
-          hsvFundTransactionsPage.fundTransactions[0].amountInDrops.toString()
-        ).toBe(fundAmountWithoutDepositFeeInDrops.toString())
-      } else {
-        throw new Error(
-          `Unexpected data lookup flag: ${entry.key.dataLookupFlag}`
-        )
+    const expectHsvGeneralInfo = cloneHSVCampaignGeneralInfo(
+      hsvGeneralInfoBefore,
+      {
+        totalAmountRaisedInDrops: 400000000n,
+        totalReserveAmountInDrops:
+          hsvGeneralInfoBefore.totalReserveAmountInDrops +
+          FUND_CAMPAIGN_DEPOSIT_IN_DROPS,
+        totalFundTransactions: 1,
       }
+    )
+
+    expect(hsvGeneralInfoAfter).toEqual(expectHsvGeneralInfo)
+
+    verifyHookStateKey(newHookStateEntries.fundTransactionsPages[0].key, {
+      destinationTag: campaignId,
+      dataLookupFlag: 1n,
     })
 
-    expect(actualDataLookupFlags).toHaveLength(expectedDataLookupFlags.length)
-    expectedDataLookupFlags.forEach((flag) => {
-      expect(actualDataLookupFlags).toContain(flag)
-    })
-
-    /* Step 2. Verify Application State contains latest changes */
-    expect(afterAppState.campaigns.length).toBe(beforeAppState.campaigns.length)
-    expect(campaignFunded).toBeDefined()
-    expect(campaignFunded.totalAmountRaisedInDrops.toString()).toBe(
-      fundAmountWithoutDepositFeeInDrops.toString()
-    )
-    expect(campaignFunded.totalReserveAmountInDrops.toString()).toBe(
-      (
-        Application.getCreateCampaignDepositInDrops() +
-        Application.getFundCampaignDepositInDrops()
-      ).toString()
+    const expectHsvFundTransactionsPage = cloneHSVFundTransactionsPage(
+      hsvFundTransactionsPageBefore,
+      [
+        {
+          pageSlotIndex: 0,
+          hsvFundTransaction: new HSVFundTransaction(
+            fundTransactionId,
+            backer1.classicAddress,
+            FUND_TRANSACTION_STATE_APPROVE_FLAG,
+            400000000n
+          ),
+        },
+      ]
     )
 
-    for (let i = 0; i < campaignFunded.milestones.length; i++) {
-      const milestone = campaignFunded.milestones[i]
-      expect(milestone.state).toBe('unstarted')
-      expect(milestone.endDateInUnixSeconds.toString()).toBe(
-        milestones[i].endDateInUnixSeconds.toString()
-      )
-      expect(milestone.payoutPercent).toBe(milestones[i].payoutPercent)
-    }
-
-    expect(campaignFunded.backers.length).toBe(1)
-    expect(campaignFunded.backers[0].account).toBe(backerWallet0.address)
-    expect(
-      campaignFunded.backers[0].fundTransactions[0].amountInDrops.toString()
-    ).toBe(fundAmountWithoutDepositFeeInDrops.toString())
-    expect(campaignFunded.fundTransactions.length).toBe(1)
-    expect(campaignFunded.fundTransactions[0].id).toBe(0)
-    expect(campaignFunded.fundTransactions[0].account).toBe(
-      backerWallet0.address
-    )
-    expect(campaignFunded.fundTransactions[0].state).toBe('approve')
-    expect(campaignFunded.fundTransactions[0].amountInDrops.toString()).toBe(
-      fundAmountWithoutDepositFeeInDrops.toString()
-    )
+    expect(hsvFundTransactionsPageAfter).toEqual(expectHsvFundTransactionsPage)
   })
 
-  it('should fund a new campaign (no backers) with multiple backers', async () => {
-    const beforeHookState = await StateUtility.getHookState(client)
-    const beforeAppState = await StateUtility.getApplicationState(client)
+  it('should fund a campaign with an existing backer', async () => {
+    // Get the current HookState
+    const hookStateBefore = await StateUtility.getHookState(client)
+    const hookStateEntriesBefore = getHookStateEntriesOfCampaign(
+      hookStateBefore,
+      campaignId
+    )
+    const hsvGeneralInfoBefore = hookStateEntriesBefore.generalInfo.value
+      .decoded as HSVCampaignGeneralInfo
+    const hsvFundTransactionsPageBefore = hookStateEntriesBefore
+      .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
 
-    // sleep 10 seconds before funding a new wallet again on Hooks Testnet v3.
-    await new Promise((resolve) => setTimeout(resolve, 10000))
-    const backerWallet1 = await fundWallet()
-    // sleep 10 seconds before funding a new wallet again on Hooks Testnet v3.
-    await new Promise((resolve) => setTimeout(resolve, 10000))
-    const backerWallet2 = await fundWallet()
-    // sleep 10 seconds before funding a new wallet again on Hooks Testnet v3.
-    await new Promise((resolve) => setTimeout(resolve, 10000))
-    const backerWallets = [backerWallet0, backerWallet1, backerWallet2]
-    const backersLength = BigInt(backerWallets.length)
+    const params: FundCampaignParams = {
+      backerWallet: backer2,
+      campaignId,
+      fundAmountInDrops:
+        300000000n + Application.getFundCampaignDepositInDrops(),
+    }
+    const fundTransactionId = await Application.fundCampaign(client, params)
 
-    const promises: Promise<void>[] = []
-    const fundAmountWithoutDepositFeeInDrops = BigInt(50000000)
-    backerWallets.forEach((backerWallet) => {
-      const fundAmountInDrops =
-        Application.getFundCampaignDepositInDrops() +
-        fundAmountWithoutDepositFeeInDrops
-      promises.push(
-        Application.fundCampaign(client, {
-          backerWallet,
-          campaignId,
-          fundAmountInDrops,
-        })
-      )
+    // Verify that the fund transaction was saved to Hook State
+    const hookStateAfter = await StateUtility.getHookState(client)
+    const newHookStateEntries = getHookStateEntriesOfCampaign(
+      hookStateAfter,
+      campaignId
+    )
+    const hsvGeneralInfoAfter = newHookStateEntries.generalInfo.value
+      .decoded as HSVCampaignGeneralInfo
+    const hsvFundTransactionsPageAfter = newHookStateEntries
+      .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
+
+    expect(fundTransactionId).toBe(1)
+    expect(hookStateAfter.entries.length).toBe(hookStateBefore.entries.length)
+    expect(newHookStateEntries.generalInfo).toBeDefined()
+    expect(newHookStateEntries.fundTransactionsPages.length).toBe(1)
+
+    verifyHookStateKey(newHookStateEntries.generalInfo.key, {
+      destinationTag: campaignId,
+      dataLookupFlag: 0n,
     })
 
-    await Promise.all(promises)
-
-    const afterHookState = await StateUtility.getHookState(client)
-    const afterHookStateEntries = afterHookState.entries.filter(
-      (entry) => entry.key.destinationTag === campaignId
-    )
-
-    const afterAppState = await StateUtility.getApplicationState(client)
-    const campaignFunded = afterAppState.campaigns.find(
-      (campaign) => campaign.id === campaignId
-    )
-    if (!campaignFunded) {
-      throw new Error(`Campaign not found in application state: ${campaignId}`)
-    }
-
-    /* Step 1. Verify Hook State contains latest changes */
-    expect(afterHookState.entries.length).toBe(
-      beforeHookState.entries.length + 1
-    )
-    expect(afterHookStateEntries.length).toBe(2)
-
-    const expectedDataLookupFlags: bigint[] = [
-      DATA_LOOKUP_GENERAL_INFO_FLAG,
-      DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG,
-    ]
-    const actualDataLookupFlags: bigint[] = []
-    const expectedFundTransactionIds: number[] = [0, 1, 2]
-    let actualFundTransactionIds: number[] = []
-    const expectedBackerWalletAddressSet = new Set<string>(
-      backerWallets.map((backerWallet) => backerWallet.address)
-    )
-    let actualBackerWalletAddressSet = new Set<string>()
-    afterHookStateEntries.forEach((entry) => {
-      actualDataLookupFlags.push(entry.key.dataLookupFlag)
-      if (entry.key.dataLookupFlag === DATA_LOOKUP_GENERAL_INFO_FLAG) {
-        const hsvGeneralInfo = entry.value.decoded as HSVCampaignGeneralInfo
-        expect(hsvGeneralInfo.state).toBe(CAMPAIGN_STATE_DERIVE_FLAG)
-        expect(hsvGeneralInfo.owner).toBe(ownerWallet.address)
-        expect(hsvGeneralInfo.fundRaiseGoalInDrops.toString()).toBe(
-          fundRaiseGoalInDrops.toString()
-        )
-        expect(hsvGeneralInfo.fundRaiseEndDateInUnixSeconds.toString()).toBe(
-          fundRaiseEndDateInUnixSeconds.toString()
-        )
-        expect(hsvGeneralInfo.totalAmountRaisedInDrops.toString()).toBe(
-          (fundAmountWithoutDepositFeeInDrops * backersLength).toString()
-        )
-        expect(hsvGeneralInfo.totalAmountNonRefundableInDrops.toString()).toBe(
-          '0'
-        )
-        expect(hsvGeneralInfo.totalReserveAmountInDrops.toString()).toBe(
-          (
-            Application.getCreateCampaignDepositInDrops() +
-            Application.getFundCampaignDepositInDrops() * backersLength
-          ).toString()
-        )
-        expect(hsvGeneralInfo.totalFundTransactions.toString()).toBe(
-          backersLength.toString()
-        )
-        expect(hsvGeneralInfo.milestones.length).toBe(milestones.length)
-        for (let i = 0; i < hsvGeneralInfo.milestones.length; i++) {
-          const hsvMilestone = hsvGeneralInfo.milestones[i]
-          expect(hsvMilestone.state).toBe(MILESTONE_STATE_DERIVE_FLAG)
-          expect(hsvMilestone.endDateInUnixSeconds.toString()).toBe(
-            milestones[i].endDateInUnixSeconds.toString()
-          )
-          expect(hsvMilestone.payoutPercent).toBe(milestones[i].payoutPercent)
-        }
-      } else if (
-        entry.key.dataLookupFlag ===
-        DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG
-      ) {
-        const hsvFundTransactionsPage = entry.value
-          .decoded as HSVFundTransactionsPage
-        expect(hsvFundTransactionsPage.fundTransactions.length.toString()).toBe(
-          backersLength.toString()
-        )
-        for (
-          let i = 0;
-          i < hsvFundTransactionsPage.fundTransactions.length;
-          i++
-        ) {
-          const fundTransaction = hsvFundTransactionsPage.fundTransactions[i]
-          actualFundTransactionIds.push(fundTransaction.id)
-          actualBackerWalletAddressSet.add(fundTransaction.account)
-          expect(fundTransaction.state).toBe(
-            FUND_TRANSACTION_STATE_APPROVE_FLAG
-          )
-          expect(fundTransaction.amountInDrops.toString()).toBe(
-            fundAmountWithoutDepositFeeInDrops.toString()
-          )
-        }
-      } else {
-        throw new Error(
-          `Unexpected data lookup flag: ${entry.key.dataLookupFlag}`
-        )
+    const expectHsvGeneralInfo = cloneHSVCampaignGeneralInfo(
+      hsvGeneralInfoBefore,
+      {
+        totalAmountRaisedInDrops: 700000000n,
+        totalReserveAmountInDrops:
+          hsvGeneralInfoBefore.totalReserveAmountInDrops +
+          Application.getFundCampaignDepositInDrops(),
+        totalFundTransactions: 2,
       }
-    })
-
-    expect(actualDataLookupFlags).toHaveLength(expectedDataLookupFlags.length)
-    expectedDataLookupFlags.forEach((flag) => {
-      expect(actualDataLookupFlags).toContain(flag)
-    })
-    expect(actualFundTransactionIds).toHaveLength(
-      expectedFundTransactionIds.length
-    )
-    expectedFundTransactionIds.forEach((id) => {
-      expect(actualFundTransactionIds).toContain(id)
-    })
-    expect(actualBackerWalletAddressSet.size).toBe(
-      expectedBackerWalletAddressSet.size
-    )
-    expectedBackerWalletAddressSet.forEach((address) => {
-      expect(actualBackerWalletAddressSet.has(address)).toBeTruthy()
-    })
-
-    /* Step 2. Verify Application State contains latest changes */
-    expect(afterAppState.campaigns.length).toBe(beforeAppState.campaigns.length)
-    expect(campaignFunded.totalAmountRaisedInDrops.toString()).toBe(
-      (fundAmountWithoutDepositFeeInDrops * backersLength).toString()
-    )
-    expect(campaignFunded.totalReserveAmountInDrops.toString()).toBe(
-      (
-        Application.getCreateCampaignDepositInDrops() +
-        Application.getFundCampaignDepositInDrops() * backersLength
-      ).toString()
     )
 
-    for (let i = 0; i < campaignFunded.milestones.length; i++) {
-      const milestone = campaignFunded.milestones[i]
-      expect(milestone.state).toBe('unstarted')
-      expect(milestone.endDateInUnixSeconds.toString()).toBe(
-        milestones[i].endDateInUnixSeconds.toString()
-      )
-      expect(milestone.payoutPercent).toBe(milestones[i].payoutPercent)
-    }
+    expect(hsvGeneralInfoAfter).toEqual(expectHsvGeneralInfo)
 
-    expect(campaignFunded.backers.length.toString()).toBe(
-      backersLength.toString()
-    )
-
-    actualBackerWalletAddressSet = new Set<string>()
-    actualFundTransactionIds = []
-
-    campaignFunded.fundTransactions.forEach((fundTransaction) => {
-      expect(fundTransaction.state).toBe('approve')
-      expect(fundTransaction.amountInDrops.toString()).toBe(
-        fundAmountWithoutDepositFeeInDrops.toString()
-      )
-      actualBackerWalletAddressSet.add(fundTransaction.account)
-      actualFundTransactionIds.push(fundTransaction.id)
+    verifyHookStateKey(newHookStateEntries.fundTransactionsPages[0].key, {
+      destinationTag: campaignId,
+      dataLookupFlag: 1n,
     })
 
-    expect(actualBackerWalletAddressSet.size).toBe(
-      expectedBackerWalletAddressSet.size
+    const expectHsvFundTransactionsPage = cloneHSVFundTransactionsPage(
+      hsvFundTransactionsPageBefore,
+      [
+        {
+          pageSlotIndex: 1,
+          hsvFundTransaction: new HSVFundTransaction(
+            fundTransactionId,
+            backer2.classicAddress,
+            FUND_TRANSACTION_STATE_APPROVE_FLAG,
+            300000000n
+          ),
+        },
+      ]
     )
-    expectedBackerWalletAddressSet.forEach((address) => {
-      expect(actualBackerWalletAddressSet.has(address)).toBeTruthy()
-    })
-    expect(actualFundTransactionIds).toHaveLength(
-      expectedFundTransactionIds.length
-    )
-    expectedFundTransactionIds.forEach((id) => {
-      expect(actualFundTransactionIds).toContain(id)
-    })
 
-    actualBackerWalletAddressSet = new Set<string>()
-    actualFundTransactionIds = []
-
-    campaignFunded.backers.forEach((backer) => {
-      expect(backer.fundTransactions.length).toBe(1)
-      expect(backer.fundTransactions[0].state).toBe('approve')
-      expect(backer.fundTransactions[0].amountInDrops.toString()).toBe(
-        fundAmountWithoutDepositFeeInDrops.toString()
-      )
-      actualBackerWalletAddressSet.add(backer.account)
-      actualFundTransactionIds.push(backer.fundTransactions[0].id)
-    })
-
-    expect(actualBackerWalletAddressSet.size).toBe(
-      expectedBackerWalletAddressSet.size
-    )
-    expectedBackerWalletAddressSet.forEach((address) => {
-      expect(actualBackerWalletAddressSet.has(address)).toBeTruthy()
-    })
-    expect(actualFundTransactionIds).toHaveLength(
-      expectedFundTransactionIds.length
-    )
-    expectedFundTransactionIds.forEach((id) => {
-      expect(actualFundTransactionIds).toContain(id)
-    })
-
-    expect(campaignFunded.fundTransactions.length.toString()).toBe(
-      backersLength.toString()
-    )
+    expect(hsvFundTransactionsPageAfter).toEqual(expectHsvFundTransactionsPage)
   })
 
-  it('should fund a new campaign (no backers) with multiple backers and multiple transactions', async () => {
-    const beforeHookState = await StateUtility.getHookState(client)
-    const beforeAppState = await StateUtility.getApplicationState(client)
-
-    // sleep 10 seconds before funding a new wallet again on Hooks Testnet v3.
-    await new Promise((resolve) => setTimeout(resolve, 10000))
-    const backerWallet1 = await fundWallet()
-    // sleep 10 seconds before funding a new wallet again on Hooks Testnet v3.
-    await new Promise((resolve) => setTimeout(resolve, 10000))
-    const backerWallet2 = await fundWallet()
-    // sleep 10 seconds before funding a new wallet again on Hooks Testnet v3.
-    await new Promise((resolve) => setTimeout(resolve, 10000))
-    const backerWallets = [backerWallet0, backerWallet1, backerWallet2]
-    const backersLength = BigInt(backerWallets.length)
-
-    // Submit first batch of fund transactions
-    let promises: Promise<void>[] = []
-    const fundAmountWithoutDepositFeeInDrops = BigInt(50000000)
-    backerWallets.forEach((backerWallet) => {
-      const fundAmountInDrops =
-        Application.getFundCampaignDepositInDrops() +
-        fundAmountWithoutDepositFeeInDrops
-      promises.push(
-        Application.fundCampaign(client, {
-          backerWallet,
-          campaignId,
-          fundAmountInDrops,
-        })
-      )
-    })
-
-    await Promise.all(promises)
-
-    // Submit 2nd batch of fund transactions again
-    promises = []
-    backerWallets.forEach((backerWallet) => {
-      const fundAmountInDrops =
-        Application.getFundCampaignDepositInDrops() +
-        fundAmountWithoutDepositFeeInDrops
-      promises.push(
-        Application.fundCampaign(client, {
-          backerWallet,
-          campaignId,
-          fundAmountInDrops,
-        })
-      )
-    })
-
-    await Promise.all(promises)
-
-    // Submit 3rd/last batch of fund transactions again
-    promises = []
-    backerWallets.forEach((backerWallet) => {
-      const fundAmountInDrops =
-        Application.getFundCampaignDepositInDrops() +
-        fundAmountWithoutDepositFeeInDrops
-      promises.push(
-        Application.fundCampaign(client, {
-          backerWallet,
-          campaignId,
-          fundAmountInDrops,
-        })
-      )
-    })
-
-    await Promise.all(promises)
-
-    const afterHookState = await StateUtility.getHookState(client)
-    const afterHookStateEntries = afterHookState.entries.filter(
-      (entry) => entry.key.destinationTag === campaignId
+  it('should fund a campaign with existing backers that adds a new FundTransactionsPage', async () => {
+    // Get the current HookState
+    const hookStateBefore = await StateUtility.getHookState(client)
+    const hookStateEntriesBefore = getHookStateEntriesOfCampaign(
+      hookStateBefore,
+      campaignId
     )
+    const hsvGeneralInfoBefore = hookStateEntriesBefore.generalInfo.value
+      .decoded as HSVCampaignGeneralInfo
+    const hsvFundTransactionsPage0Before = hookStateEntriesBefore
+      .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
+    const hsvFundTransactionsPage1Before = null // expect this to be null
 
-    const afterAppState = await StateUtility.getApplicationState(client)
-    const campaignFunded = afterAppState.campaigns.find(
-      (campaign) => campaign.id === campaignId
-    )
-    if (!campaignFunded) {
-      throw new Error(`Campaign not found in application state: ${campaignId}`)
+    const params1: FundCampaignParams = {
+      backerWallet: backer3,
+      campaignId,
+      fundAmountInDrops:
+        300000000n + Application.getFundCampaignDepositInDrops(),
+    }
+    const params2: FundCampaignParams = {
+      backerWallet: backer1,
+      campaignId,
+      fundAmountInDrops:
+        300000000n + Application.getFundCampaignDepositInDrops(),
+    }
+    const params3: FundCampaignParams = {
+      backerWallet: backer2,
+      campaignId,
+      fundAmountInDrops:
+        300000000n + Application.getFundCampaignDepositInDrops(),
+    }
+    const params4: FundCampaignParams = {
+      backerWallet: backer3,
+      campaignId,
+      fundAmountInDrops:
+        300000000n + Application.getFundCampaignDepositInDrops(),
     }
 
-    /* Step 1. Verify Hook State contains latest changes */
-    expect(afterHookState.entries.length).toBe(
-      beforeHookState.entries.length + 2
-    )
-    expect(afterHookStateEntries.length).toBe(3)
+    // Synchronous fundCampaign calls so fundTransactionId is deterministic
+    const fundTransactionId1 = await Application.fundCampaign(client, params1)
+    const fundTransactionId2 = await Application.fundCampaign(client, params2)
+    const fundTransactionId3 = await Application.fundCampaign(client, params3)
+    const fundTransactionId4 = await Application.fundCampaign(client, params4)
 
-    const expectedDataLookupFlags: bigint[] = [
-      DATA_LOOKUP_GENERAL_INFO_FLAG,
-      DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG,
-      DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG + 1n,
-    ]
-    const actualDataLookupFlags: bigint[] = []
-    const expectedFundTransactionIds: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-    let actualFundTransactionIds: number[] = []
-    const expectedBackerWalletAddressSet = new Set<string>(
-      backerWallets.map((backerWallet) => backerWallet.address)
+    // Verify that the fund transaction was saved to Hook State
+    const hookStateAfter = await StateUtility.getHookState(client)
+
+    const newHookStateEntries = getHookStateEntriesOfCampaign(
+      hookStateAfter,
+      campaignId
     )
-    let actualBackerWalletAddressSet = new Set<string>()
-    afterHookStateEntries.forEach((entry) => {
-      actualDataLookupFlags.push(entry.key.dataLookupFlag)
-      if (entry.key.dataLookupFlag === DATA_LOOKUP_GENERAL_INFO_FLAG) {
-        const hsvGeneralInfo = entry.value.decoded as HSVCampaignGeneralInfo
-        expect(hsvGeneralInfo.state).toBe(CAMPAIGN_STATE_DERIVE_FLAG)
-        expect(hsvGeneralInfo.owner).toBe(ownerWallet.address)
-        expect(hsvGeneralInfo.fundRaiseGoalInDrops.toString()).toBe(
-          fundRaiseGoalInDrops.toString()
-        )
-        expect(hsvGeneralInfo.fundRaiseEndDateInUnixSeconds.toString()).toBe(
-          fundRaiseEndDateInUnixSeconds.toString()
-        )
-        expect(hsvGeneralInfo.totalAmountRaisedInDrops.toString()).toBe(
-          (fundAmountWithoutDepositFeeInDrops * backersLength * 3n).toString()
-        )
-        expect(hsvGeneralInfo.totalAmountNonRefundableInDrops.toString()).toBe(
-          '0'
-        )
-        expect(hsvGeneralInfo.totalReserveAmountInDrops.toString()).toBe(
-          (
-            Application.getCreateCampaignDepositInDrops() +
-            Application.getFundCampaignDepositInDrops() * backersLength * 3n
-          ).toString()
-        )
-        expect(hsvGeneralInfo.totalFundTransactions.toString()).toBe(
-          (backersLength * 3n).toString()
-        )
-        expect(hsvGeneralInfo.milestones.length).toBe(milestones.length)
-        for (let i = 0; i < hsvGeneralInfo.milestones.length; i++) {
-          const hsvMilestone = hsvGeneralInfo.milestones[i]
-          expect(hsvMilestone.state).toBe(MILESTONE_STATE_DERIVE_FLAG)
-          expect(hsvMilestone.endDateInUnixSeconds.toString()).toBe(
-            milestones[i].endDateInUnixSeconds.toString()
-          )
-          expect(hsvMilestone.payoutPercent).toBe(milestones[i].payoutPercent)
-        }
-      } else if (
-        entry.key.dataLookupFlag ===
-        DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG
-      ) {
-        const hsvFundTransactionsPage = entry.value
-          .decoded as HSVFundTransactionsPage
-        expect(hsvFundTransactionsPage.fundTransactions.length).toBe(5)
-        for (
-          let i = 0;
-          i < hsvFundTransactionsPage.fundTransactions.length;
-          i++
-        ) {
-          const fundTransaction = hsvFundTransactionsPage.fundTransactions[i]
-          actualFundTransactionIds.push(fundTransaction.id)
-          actualBackerWalletAddressSet.add(fundTransaction.account)
-          expect(fundTransaction.state).toBe(
-            FUND_TRANSACTION_STATE_APPROVE_FLAG
-          )
-          expect(fundTransaction.amountInDrops.toString()).toBe(
-            fundAmountWithoutDepositFeeInDrops.toString()
-          )
-        }
-      } else if (
-        entry.key.dataLookupFlag ===
-        DATA_LOOKUP_FUND_TRANSACTIONS_PAGE_START_INDEX_FLAG + 1n
-      ) {
-        const hsvFundTransactionsPage = entry.value
-          .decoded as HSVFundTransactionsPage
-        expect(hsvFundTransactionsPage.fundTransactions.length).toBe(4)
-        for (
-          let i = 0;
-          i < hsvFundTransactionsPage.fundTransactions.length;
-          i++
-        ) {
-          const fundTransaction = hsvFundTransactionsPage.fundTransactions[i]
-          actualFundTransactionIds.push(fundTransaction.id)
-          actualBackerWalletAddressSet.add(fundTransaction.account)
-          expect(fundTransaction.state).toBe(
-            FUND_TRANSACTION_STATE_APPROVE_FLAG
-          )
-          expect(fundTransaction.amountInDrops.toString()).toBe(
-            fundAmountWithoutDepositFeeInDrops.toString()
-          )
-        }
-      } else {
-        throw new Error(
-          `Unexpected data lookup flag: ${entry.key.dataLookupFlag}`
-        )
+    const hsvGeneralInfoAfter = newHookStateEntries.generalInfo.value
+      .decoded as HSVCampaignGeneralInfo
+    const hsvFundTransactionsPage0After = newHookStateEntries
+      .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
+    const hsvFundTransactionsPage1After = newHookStateEntries
+      .fundTransactionsPages[1].value.decoded as HSVFundTransactionsPage
+
+    expect(fundTransactionId1).toBe(2)
+    expect(fundTransactionId2).toBe(3)
+    expect(fundTransactionId3).toBe(4)
+    expect(fundTransactionId4).toBe(5)
+    expect(hookStateAfter.entries.length).toBe(
+      hookStateBefore.entries.length + 1
+    )
+    expect(newHookStateEntries.generalInfo).toBeDefined()
+    expect(newHookStateEntries.fundTransactionsPages.length).toBe(2)
+
+    verifyHookStateKey(newHookStateEntries.generalInfo.key, {
+      destinationTag: campaignId,
+      dataLookupFlag: 0n,
+    })
+
+    const expectHsvGeneralInfo = cloneHSVCampaignGeneralInfo(
+      hsvGeneralInfoAfter,
+      {
+        totalAmountRaisedInDrops: 1900000000n,
+        totalReserveAmountInDrops:
+          hsvGeneralInfoBefore.totalReserveAmountInDrops +
+          Application.getFundCampaignDepositInDrops() * 4n,
+        totalFundTransactions: 6,
       }
-    })
-
-    expect(actualDataLookupFlags).toHaveLength(expectedDataLookupFlags.length)
-    expectedDataLookupFlags.forEach((flag) => {
-      expect(actualDataLookupFlags).toContain(flag)
-    })
-    expect(actualFundTransactionIds).toHaveLength(
-      expectedFundTransactionIds.length
-    )
-    expectedFundTransactionIds.forEach((id) => {
-      expect(actualFundTransactionIds).toContain(id)
-    })
-    expect(actualBackerWalletAddressSet.size).toBe(
-      expectedBackerWalletAddressSet.size
-    )
-    expectedBackerWalletAddressSet.forEach((address) => {
-      expect(actualBackerWalletAddressSet.has(address)).toBeTruthy()
-    })
-
-    /* Step 2. Verify Application State contains latest changes */
-    expect(afterAppState.campaigns.length).toBe(beforeAppState.campaigns.length)
-    expect(campaignFunded.totalAmountRaisedInDrops.toString()).toBe(
-      (fundAmountWithoutDepositFeeInDrops * backersLength * 3n).toString()
-    )
-    expect(campaignFunded.totalReserveAmountInDrops.toString()).toBe(
-      (
-        Application.getCreateCampaignDepositInDrops() +
-        Application.getFundCampaignDepositInDrops() * backersLength * 3n
-      ).toString()
     )
 
-    for (let i = 0; i < campaignFunded.milestones.length; i++) {
-      const milestone = campaignFunded.milestones[i]
-      expect(milestone.state).toBe('unstarted')
-      expect(milestone.endDateInUnixSeconds.toString()).toBe(
-        milestones[i].endDateInUnixSeconds.toString()
-      )
-      expect(milestone.payoutPercent).toBe(milestones[i].payoutPercent)
-    }
+    expect(hsvGeneralInfoAfter).toEqual(expectHsvGeneralInfo)
 
-    expect(campaignFunded.backers.length.toString()).toBe(
-      backersLength.toString()
+    // Verify fundTransactionsPage0 is unchanged
+    verifyHookStateKey(newHookStateEntries.fundTransactionsPages[0].key, {
+      destinationTag: campaignId,
+      dataLookupFlag: 1n,
+    })
+
+    const expectHsvFundTransactionsPage0 = cloneHSVFundTransactionsPage(
+      hsvFundTransactionsPage0Before,
+      [
+        {
+          pageSlotIndex: 2,
+          hsvFundTransaction: new HSVFundTransaction(
+            fundTransactionId1,
+            backer3.classicAddress,
+            FUND_TRANSACTION_STATE_APPROVE_FLAG,
+            300000000n
+          ),
+        },
+        {
+          pageSlotIndex: 3,
+          hsvFundTransaction: new HSVFundTransaction(
+            fundTransactionId2,
+            backer1.classicAddress,
+            FUND_TRANSACTION_STATE_APPROVE_FLAG,
+            300000000n
+          ),
+        },
+        {
+          pageSlotIndex: 4,
+          hsvFundTransaction: new HSVFundTransaction(
+            fundTransactionId3,
+            backer2.classicAddress,
+            FUND_TRANSACTION_STATE_APPROVE_FLAG,
+            300000000n
+          ),
+        },
+      ]
     )
 
-    actualBackerWalletAddressSet = new Set<string>()
-    actualFundTransactionIds = []
-
-    campaignFunded.fundTransactions.forEach((fundTransaction) => {
-      expect(fundTransaction.state).toBe('approve')
-      expect(fundTransaction.amountInDrops.toString()).toBe(
-        fundAmountWithoutDepositFeeInDrops.toString()
-      )
-      actualBackerWalletAddressSet.add(fundTransaction.account)
-      actualFundTransactionIds.push(fundTransaction.id)
-    })
-
-    expect(actualBackerWalletAddressSet.size).toBe(
-      expectedBackerWalletAddressSet.size
+    expect(hsvFundTransactionsPage0After).toEqual(
+      expectHsvFundTransactionsPage0
     )
-    expectedBackerWalletAddressSet.forEach((address) => {
-      expect(actualBackerWalletAddressSet.has(address)).toBeTruthy()
+
+    // Verify fundTransactionsPage1 is correct
+    verifyHookStateKey(newHookStateEntries.fundTransactionsPages[1].key, {
+      destinationTag: campaignId,
+      dataLookupFlag: 2n,
     })
-    expect(actualFundTransactionIds).toHaveLength(
-      expectedFundTransactionIds.length
+
+    const expectHsvFundTransactionsPage1 = cloneHSVFundTransactionsPage(
+      hsvFundTransactionsPage1Before,
+      [
+        {
+          pageSlotIndex: 0,
+          hsvFundTransaction: new HSVFundTransaction(
+            fundTransactionId4,
+            backer3.classicAddress,
+            FUND_TRANSACTION_STATE_APPROVE_FLAG,
+            300000000n
+          ),
+        },
+      ]
     )
-    expectedFundTransactionIds.forEach((id) => {
-      expect(actualFundTransactionIds).toContain(id)
-    })
 
-    actualBackerWalletAddressSet = new Set<string>()
-    actualFundTransactionIds = []
-
-    campaignFunded.backers.forEach((backer) => {
-      expect(backer.fundTransactions.length).toBe(3)
-      backer.fundTransactions.forEach((fundTransaction) => {
-        expect(fundTransaction.state).toBe('approve')
-        expect(fundTransaction.amountInDrops.toString()).toBe(
-          fundAmountWithoutDepositFeeInDrops.toString()
-        )
-        actualBackerWalletAddressSet.add(fundTransaction.account)
-        actualFundTransactionIds.push(fundTransaction.id)
-      })
-    })
-
-    expect(actualBackerWalletAddressSet.size).toBe(
-      expectedBackerWalletAddressSet.size
-    )
-    expectedBackerWalletAddressSet.forEach((address) => {
-      expect(actualBackerWalletAddressSet.has(address)).toBeTruthy()
-    })
-    expect(actualFundTransactionIds).toHaveLength(
-      expectedFundTransactionIds.length
-    )
-    expectedFundTransactionIds.forEach((id) => {
-      expect(actualFundTransactionIds).toContain(id)
-    })
-
-    expect(campaignFunded.fundTransactions.length.toString()).toBe(
-      (backersLength * 3n).toString()
+    expect(hsvFundTransactionsPage1After).toEqual(
+      expectHsvFundTransactionsPage1
     )
   })
 })

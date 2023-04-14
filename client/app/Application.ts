@@ -11,6 +11,7 @@ Here are the operations that are required by the application:
 7. Request Milestone Payout Payment
 */
 
+import { spawnSync } from 'child_process'
 import {
   Client,
   convertStringToHex,
@@ -83,6 +84,30 @@ export interface RequestMilestonePayoutPaymentParams {
 }
 
 export class Application {
+  static init(): void {
+    const command1 = 'npm'
+    const args1 = ['run', 'app:setup-hook-account']
+
+    const result1 = spawnSync(command1, args1, { stdio: 'inherit' })
+
+    if (result1.status !== 0) {
+      console.error(`Error running command1: ${result1.stderr}`)
+      process.exit(result1.status)
+    }
+
+    const command2 = 'npm'
+    const args2 = ['run', 'build-set-hooks']
+
+    const result2 = spawnSync(command2, args2, { stdio: 'inherit' })
+
+    if (result2.status !== 0) {
+      console.error(`Error running command2: ${result2.stderr}`)
+      process.exit(result2.status)
+    }
+
+    console.log('All commands completed successfully.')
+  }
+
   static getCreateCampaignDepositInDrops(): bigint {
     return CREATE_CAMPAIGN_DEPOSIT_IN_DROPS
   }
@@ -181,6 +206,22 @@ export class Application {
 
     const applicationState = await StateUtility.getApplicationState(client)
     return applicationState.campaigns
+  }
+
+  static async getCampaignById(
+    client: Client,
+    campaignId: number
+  ): Promise<Campaign> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
+
+    const campaigns = await Application.viewCampaigns(client)
+    const campaign = campaigns.find((campaign) => campaign.id === campaignId)
+    if (!campaign) {
+      throw new Error(`Campaign with ID ${campaignId} not found`)
+    }
+    return campaign
   }
 
   static async fundCampaign(
@@ -573,6 +614,9 @@ export class Application {
       throw new Error(
         `Invalid backerWallet ${backerWallet}. Must be an instance of Wallet`
       )
+    }
+    if (campaignId === undefined) {
+      throw new Error(`Invalid campaignId ${campaignId}. Must be defined`)
     }
     if (campaignId < 0 || campaignId > 2 ** 32 - 1) {
       throw new Error(

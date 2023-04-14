@@ -6,7 +6,8 @@
   "scripts": {
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "jest --config=jest.config.unit.js --coverage",
-    "test:integration": "jest --config=jest.config.integration.js",
+    "test:setup": "npx ts-node ./client/test-integration/setupTestData",
+    "test:integration": "jest --config=jest.config.integration.js --runInBand",
     "lint": "eslint ./client/**/* --ext .ts",
     "format": "npx prettier --write ./client",
     "setup": "make setup",

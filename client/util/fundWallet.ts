@@ -10,12 +10,18 @@ const URL = `https://hooks-testnet-v3.xrpl-labs.com/accounts`
  *
  * @returns {Wallet}
  */
-export async function fundWallet(): Promise<Wallet> {
+export async function fundWallet(wallet?: Wallet): Promise<Wallet> {
+  const fullURL = wallet ? `${URL}?account=${wallet.classicAddress}` : URL
+
   // Fund new Hook Testnet account
-  const res = await axios.post(URL)
+  const res = await axios.post(fullURL)
   if (res.data.error) {
     // NOTE: error is probably due to not waiting 10 seconds before requesting a new wallet again
     throw new Error(`fundWallet error: ${res.data.error}`)
+  }
+
+  if (wallet) {
+    return wallet
   }
   return Wallet.fromSecret(res.data.account.secret)
 }

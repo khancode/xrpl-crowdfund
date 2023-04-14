@@ -1,7 +1,7 @@
 {
   "HOOKS": [
     {
-      "HOOK_C_FILENAME": "crowdfund_payment",
+      "HOOK_C_FILENAME": "crowdfund_payment_dev",
       "HookOn": ["Payment"]
     },
     {

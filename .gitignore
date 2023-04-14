@@ -2,3 +2,4 @@ build
 config.json
 node_modules
 coverage
+client/test-integration/accounts.json
