@@ -4,14 +4,14 @@ import { Wallet } from 'xrpl'
 import { Application, VoteRejectMilestoneParams } from '../app/Application'
 import { StateUtility } from '../util/StateUtility'
 import {
-  IntegApplication,
-  IntegCreateCampaignParams,
-  IntegFundCampaignParams,
-} from './IntegApplication'
+  DevApplication,
+  DevCreateCampaignParams,
+  DevFundCampaignParams,
+} from './DevApplication'
 import { dateOffsetToUnixTimestampInSeconds } from './testUtil'
 
 // TODO: implement this test
-describe.skip('voteRejectMilestone', () => {
+describe('voteRejectMilestone', () => {
   let owner: Wallet
   let backer1: Wallet
   let backer2: Wallet
@@ -19,6 +19,7 @@ describe.skip('voteRejectMilestone', () => {
   let campaignId: number
   let fundTransactionId1: number
   let fundTransactionId2: number
+  let mockCurrentTimeInUnixSeconds: bigint
 
   beforeAll(async () => {
     await connectClient()
@@ -28,8 +29,11 @@ describe.skip('voteRejectMilestone', () => {
     backer1 = Wallet.fromSeed(voteRejectMilestoneAccounts[1].seed)
     backer2 = Wallet.fromSeed(voteRejectMilestoneAccounts[2].seed)
     backer3 = Wallet.fromSeed(voteRejectMilestoneAccounts[3].seed)
+    mockCurrentTimeInUnixSeconds =
+      dateOffsetToUnixTimestampInSeconds('3_MONTH_BEFORE')
 
-    const createCampaignParams: IntegCreateCampaignParams = {
+    const createCampaignParams: DevCreateCampaignParams = {
+      mockCurrentTimeInUnixSeconds,
       ownerWallet: owner,
       depositInDrops: 100000100n,
       title: 'OFF-LEDGER DATA',
@@ -60,27 +64,29 @@ describe.skip('voteRejectMilestone', () => {
       ],
     }
 
-    campaignId = await IntegApplication.createCampaign(
+    campaignId = await DevApplication.createCampaign(
       client,
       createCampaignParams
     )
 
-    const fundCampaignParams1: IntegFundCampaignParams = {
+    const fundCampaignParams1: DevFundCampaignParams = {
+      mockCurrentTimeInUnixSeconds,
       backerWallet: backer1,
       campaignId,
       fundAmountInDrops: 400000000n,
     }
-    fundTransactionId1 = await IntegApplication.fundCampaign(
+    fundTransactionId1 = await DevApplication.fundCampaign(
       client,
       fundCampaignParams1
     )
 
-    const fundCampaignParams2: IntegFundCampaignParams = {
+    const fundCampaignParams2: DevFundCampaignParams = {
+      mockCurrentTimeInUnixSeconds,
       backerWallet: backer2,
       campaignId,
       fundAmountInDrops: 400000000n,
     }
-    fundTransactionId2 = await IntegApplication.fundCampaign(
+    fundTransactionId2 = await DevApplication.fundCampaign(
       client,
       fundCampaignParams2
     )

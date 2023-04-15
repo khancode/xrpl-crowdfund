@@ -1,6 +1,6 @@
 /*
 Modified versions of Create Campaign & Fund Campaign operations from the client application
-that are used for integration testing.
+that are used for development & integration testing.
 
 It bypasses current timestamp validation to add historical data to the ledger.
 */
@@ -9,6 +9,7 @@ import {
   Client,
   convertStringToHex,
   Payment,
+  Transaction,
   TxResponse,
   validate,
   Wallet,
@@ -26,12 +27,15 @@ import {
   OVERVIEW_URL_MAX_LENGTH,
   TITLE_MAX_LENGTH,
 } from '../app/constants'
-import { IntegCreateCampaignPayload } from './IntegCreateCampaignPayload'
-import { IntegFundCampaignPayload } from './IntegFundCampaignPayload'
+import { DevCreateCampaignPayload } from './DevCreateCampaignPayload'
+import { DevFundCampaignPayload } from './DevFundCampaignPayload'
 import { MilestonePayload } from '../app/models/MilestonePayload'
 import { Application } from '../app/Application'
+import { DevVoteRejectMilestonePayload } from './DevVoteRejectMilestonePayload'
+import { DevVoteApproveMilestonePayload } from './DevVoteApproveMilestonePayload'
 
-export interface IntegCreateCampaignParams {
+export interface DevCreateCampaignParams {
+  mockCurrentTimeInUnixSeconds: bigint
   ownerWallet: Wallet
   depositInDrops: bigint
   title: string
@@ -46,22 +50,35 @@ export interface IntegCreateCampaignParams {
   }>
 }
 
-export interface IntegFundCampaignParams {
+export interface DevFundCampaignParams {
+  mockCurrentTimeInUnixSeconds: bigint
   backerWallet: Wallet
   campaignId: number
   fundAmountInDrops: bigint
 }
 
-export class IntegApplication {
+interface DevInvokeCampaignParams {
+  mockCurrentTimeInUnixSeconds: bigint
+  backerWallet: Wallet
+  campaignId: number
+  fundTransactionId: number
+}
+
+export type DevVoteRejectMilestoneParams = DevInvokeCampaignParams
+
+export type DevVoteApproveMilestoneParams = DevInvokeCampaignParams
+
+export class DevApplication {
   static async createCampaign(
     client: Client,
-    params: IntegCreateCampaignParams
+    params: DevCreateCampaignParams
   ): Promise<number> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
     }
 
     const {
+      mockCurrentTimeInUnixSeconds,
       ownerWallet,
       depositInDrops,
       title,
@@ -73,7 +90,7 @@ export class IntegApplication {
     } = params
 
     /* Step 1. Input validation */
-    this._validateCreateCampaignParams(params)
+    this._validateDevCreateCampaignParams(params)
 
     /* Step 2. Generate a random unique campaign ID */
     const campaigns = await Application.viewCampaigns(client)
@@ -91,7 +108,8 @@ export class IntegApplication {
         milestone.payoutPercent
       )
     })
-    const createCampaignPayload = new IntegCreateCampaignPayload(
+    const createCampaignPayload = new DevCreateCampaignPayload(
+      mockCurrentTimeInUnixSeconds,
       fundRaiseGoalInDrops,
       fundRaiseEndDateInUnixSeconds,
       milestonePayloads
@@ -135,19 +153,26 @@ export class IntegApplication {
 
   static async fundCampaign(
     client: Client,
-    params: IntegFundCampaignParams
+    params: DevFundCampaignParams
   ): Promise<number> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
     }
 
     /* Step 1. Input validation */
-    this._validateFundCampaignParams(params)
+    this._validateDevFundCampaignParams(params)
 
-    const { backerWallet, campaignId, fundAmountInDrops } = params
+    const {
+      mockCurrentTimeInUnixSeconds,
+      backerWallet,
+      campaignId,
+      fundAmountInDrops,
+    } = params
 
     /* Step 2. Create transaction Memo payload */
-    const fundCampaignPayload = new IntegFundCampaignPayload()
+    const fundCampaignPayload = new DevFundCampaignPayload(
+      mockCurrentTimeInUnixSeconds
+    )
 
     // Step 3. Submit Payment transaction with FundCampaignPayload
     const fundCampaignTx: Payment = {
@@ -188,6 +213,108 @@ export class IntegApplication {
     return fundTransactionId
   }
 
+  static async voteRejectMilestone(
+    client: Client,
+    params: DevVoteRejectMilestoneParams
+  ): Promise<void> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
+
+    /* Step 1. Input validation */
+    this._validateDevInvokeCampaignParams(params)
+
+    const {
+      mockCurrentTimeInUnixSeconds,
+      backerWallet,
+      campaignId,
+      fundTransactionId,
+    } = params
+
+    /* Step 2. Create transaction Blob payload */
+    const voteRejectMilestonePayload = new DevVoteRejectMilestonePayload(
+      mockCurrentTimeInUnixSeconds,
+      fundTransactionId
+    )
+
+    /* Step 3. Submit Invoke transaction with VoteRejectMilestonePayload */
+    const voteRejectMilestoneTx: Transaction = {
+      // @ts-expect-error - Invoke transaction type is supported in Hooks Testnet v3
+      TransactionType: 'Invoke',
+      Account: backerWallet.address,
+      Destination: HOOK_ACCOUNT_WALLET.address,
+      DestinationTag: campaignId,
+      Blob: voteRejectMilestonePayload.encode(),
+    }
+
+    await prepareTransactionV3(voteRejectMilestoneTx)
+
+    const voteRejectMilestoneTxResponse = await client.submitAndWait(
+      voteRejectMilestoneTx,
+      {
+        autofill: true,
+        wallet: backerWallet,
+      }
+    )
+
+    /* Step 4. Check Invoke transaction result */
+    this._validateTxResponse(
+      voteRejectMilestoneTxResponse,
+      'voteRejectMilestone'
+    )
+  }
+
+  static async voteApproveMilestone(
+    client: Client,
+    params: DevVoteApproveMilestoneParams
+  ): Promise<void> {
+    if (!client.isConnected()) {
+      throw new Error('xrpl Client is not connected')
+    }
+
+    /* Step 1. Input validation */
+    this._validateDevInvokeCampaignParams(params)
+
+    const {
+      mockCurrentTimeInUnixSeconds,
+      backerWallet,
+      campaignId,
+      fundTransactionId,
+    } = params
+
+    /* Step 2. Create transaction Blob payload */
+    const voteApproveMilestonePayload = new DevVoteApproveMilestonePayload(
+      mockCurrentTimeInUnixSeconds,
+      fundTransactionId
+    )
+
+    /* Step 3. Submit Invoke transaction with VoteApproveMilestonePayload */
+    const voteApproveMilestoneTx: Transaction = {
+      // @ts-expect-error - Invoke transaction type is supported in Hooks Testnet v3
+      TransactionType: 'Invoke',
+      Account: backerWallet.address,
+      Destination: HOOK_ACCOUNT_WALLET.address,
+      DestinationTag: campaignId,
+      Blob: voteApproveMilestonePayload.encode(),
+    }
+
+    await prepareTransactionV3(voteApproveMilestoneTx)
+
+    const voteApproveMilestoneTxResponse = await client.submitAndWait(
+      voteApproveMilestoneTx,
+      {
+        autofill: true,
+        wallet: backerWallet,
+      }
+    )
+
+    /* Step 4. Check Invoke transaction result */
+    this._validateTxResponse(
+      voteApproveMilestoneTxResponse,
+      'voteApproveMilestone'
+    )
+  }
+
   private static _validateTxResponse(
     txResponse: TxResponse,
     operationName: string
@@ -216,10 +343,11 @@ export class IntegApplication {
     return acceptMessageHex
   }
 
-  private static _validateCreateCampaignParams(
-    params: IntegCreateCampaignParams
+  private static _validateDevCreateCampaignParams(
+    params: DevCreateCampaignParams
   ) {
     const {
+      mockCurrentTimeInUnixSeconds,
       ownerWallet,
       depositInDrops,
       title,
@@ -268,6 +396,11 @@ export class IntegApplication {
         `Invalid fundRaiseGoalInDrops ${fundRaiseGoalInDrops}. Must be between 1 and 2^64 - 1`
       )
     }
+    if (fundRaiseEndDateInUnixSeconds <= mockCurrentTimeInUnixSeconds) {
+      throw new Error(
+        `Invalid fundRaiseEndDateInUnixSeconds ${fundRaiseEndDateInUnixSeconds} is a past date. Must be a future date`
+      )
+    }
     if (fundRaiseEndDateInUnixSeconds > 2 ** 32 - 1) {
       throw new Error(
         `Invalid fundRaiseEndDateInUnixSeconds ${fundRaiseEndDateInUnixSeconds} exceeds max value. Must be less than 2^32 - 1`
@@ -279,6 +412,11 @@ export class IntegApplication {
       )
     }
     for (const milestone of milestones) {
+      if (milestone.endDateInUnixSeconds <= mockCurrentTimeInUnixSeconds) {
+        throw new Error(
+          `Invalid milestone.endDateInUnixSeconds ${milestone.endDateInUnixSeconds} is a past date. Must be a future date`
+        )
+      }
       if (milestone.endDateInUnixSeconds > 2 ** 32 - 1) {
         throw new Error(
           `Invalid milestone.endDateInUnixSeconds ${milestone.endDateInUnixSeconds} exceeds max value. Must be less than 2^32 - 1`
@@ -316,7 +454,7 @@ export class IntegApplication {
     }
   }
 
-  private static _validateFundCampaignParams(params: IntegFundCampaignParams) {
+  private static _validateDevFundCampaignParams(params: DevFundCampaignParams) {
     const { backerWallet, campaignId, fundAmountInDrops } = params
 
     if (backerWallet instanceof Wallet === false) {
@@ -340,6 +478,28 @@ export class IntegApplication {
     if (fundAmountInDrops > 2n ** 64n - 1n) {
       throw new Error(
         `Invalid fundAmountInDrops ${fundAmountInDrops}. Must be less than 2^64 - 1 drops`
+      )
+    }
+  }
+
+  private static _validateDevInvokeCampaignParams(
+    params: DevInvokeCampaignParams
+  ) {
+    const { backerWallet, campaignId, fundTransactionId } = params
+
+    if (backerWallet instanceof Wallet === false) {
+      throw new Error(
+        `Invalid backerWallet ${backerWallet}. Must be an instance of Wallet`
+      )
+    }
+    if (campaignId < 0 || campaignId > 2 ** 32 - 1) {
+      throw new Error(
+        `Invalid campaignId ${campaignId}. Must be between 0 and 2^32 - 1`
+      )
+    }
+    if (fundTransactionId < 0 || fundTransactionId > 2 ** 32 - 1) {
+      throw new Error(
+        `Invalid fundTransactionId ${fundTransactionId}. Must be between 0 and 2^32 - 1`
       )
     }
   }

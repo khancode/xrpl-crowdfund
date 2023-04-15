@@ -5,7 +5,7 @@
       "HookOn": ["Payment"]
     },
     {
-      "HOOK_C_FILENAME": "crowdfund_invoke",
+      "HOOK_C_FILENAME": "crowdfund_invoke_dev",
       "HookOn": ["Invoke"]
     }
   ],
