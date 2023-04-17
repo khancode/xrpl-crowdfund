@@ -3,4 +3,3 @@ config.json
 node_modules
 coverage
 client/test-integration/accounts.json
-client/setup-data/accounts.json
