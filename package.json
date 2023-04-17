@@ -12,6 +12,7 @@
     "test:unit": "jest --config=jest.config.unit.js --coverage",
     "test:setup": "npx ts-node ./client/test-integration/setupTestData",
     "test:integration": "jest --config=jest.config.integration.js --runInBand",
+    "test:database": "jest --config=jest.config.database.js",
     "lint": "eslint ./client/**/* --ext .ts",
     "format": "npx prettier --write ./client",
     "setup": "make setup",
@@ -37,7 +38,9 @@
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "crypto-js": "^4.1.1",
+    "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "mongoose": "^7.0.3",
     "ripple-address-codec": "^4.2.5",
     "ripple-binary-codec": "^1.4.3",
     "xrpl": "^2.7.0"

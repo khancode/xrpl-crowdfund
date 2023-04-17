@@ -9,9 +9,12 @@ import {
   DevFundCampaignParams,
 } from './DevApplication'
 import { dateOffsetToUnixTimestampInSeconds } from './testUtil'
+import connectDatabase from '../database'
+import { Connection } from 'mongoose'
 
 // TODO: implement this test
 describe('voteRejectMilestone', () => {
+  let database: Connection
   let owner: Wallet
   let backer1: Wallet
   let backer2: Wallet
@@ -23,6 +26,7 @@ describe('voteRejectMilestone', () => {
 
   beforeAll(async () => {
     await connectClient()
+    database = await connectDatabase()
 
     const voteRejectMilestoneAccounts = accounts['voteRejectMilestone']
     owner = Wallet.fromSeed(voteRejectMilestoneAccounts[0].seed)
@@ -36,9 +40,10 @@ describe('voteRejectMilestone', () => {
       mockCurrentTimeInUnixSeconds,
       ownerWallet: owner,
       depositInDrops: 100000100n,
-      title: 'OFF-LEDGER DATA',
-      description: 'OFF-LEDGER DATA',
-      overviewURL: 'OFF-LEDGER DATA',
+      title: 'The Ultimate Wireless Earbuds for Immersive Audio Experience',
+      description:
+        "Our wireless earbuds use advanced audio technology to provide an immersive audio experience. With high-quality sound and noise-cancellation, it's perfect for music lovers and audiophiles.",
+      overviewUrl: 'https://www.audiogearco.com/wireless-earbuds-campaign',
       fundRaiseGoalInDrops: 100000000n,
       fundRaiseEndDateInUnixSeconds:
         dateOffsetToUnixTimestampInSeconds('1_MONTH_BEFORE'),
@@ -46,19 +51,19 @@ describe('voteRejectMilestone', () => {
         {
           endDateInUnixSeconds:
             dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
-          title: 'OFF-LEDGER DATA',
+          title: 'Initial funds to cover design and prototype costs',
           payoutPercent: 25,
         },
         {
           endDateInUnixSeconds:
             dateOffsetToUnixTimestampInSeconds('2_MONTH_AFTER'),
-          title: 'OFF-LEDGER DATA',
+          title: 'Design and prototype wireless earbuds',
           payoutPercent: 25,
         },
         {
           endDateInUnixSeconds:
             dateOffsetToUnixTimestampInSeconds('3_MONTH_AFTER'),
-          title: 'OFF-LEDGER DATA',
+          title: 'Launch wireless earbuds on Kickstarter',
           payoutPercent: 50,
         },
       ],
@@ -66,6 +71,7 @@ describe('voteRejectMilestone', () => {
 
     campaignId = await DevApplication.createCampaign(
       client,
+      database,
       createCampaignParams
     )
 
@@ -94,6 +100,7 @@ describe('voteRejectMilestone', () => {
 
   afterAll(async () => {
     await disconnectClient()
+    await database.close()
   })
 
   it('should vote reject milestone a campaign with only 2 backers', async () => {

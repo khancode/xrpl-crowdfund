@@ -43,6 +43,9 @@ import {
   RequestMilestonePayoutPaymentParams,
   RequestRefundPaymentParams,
 } from '../app/Application'
+import connectDatabase from '../database'
+import { CampaignDatabaseModel } from '../database/models/campaign.model'
+import { Connection } from 'mongoose'
 
 const TEST_GROUPS = [
   'historical-failed-fundraise',
@@ -168,6 +171,7 @@ async function setupAccounts(
 
 async function historicalFailedFundraise(
   client: Client,
+  database: Connection,
   accounts: Wallet[]
 ): Promise<void> {
   console.log('historical-failed-fundraise')
@@ -191,9 +195,10 @@ async function historicalFailedFundraise(
       dateOffsetToUnixTimestampInSeconds('5_MONTH_BEFORE'),
     ownerWallet: owner,
     depositInDrops: 100000100n,
-    title: 'OFF-LEDGER DATA',
-    description: 'OFF-LEDGER DATA',
-    overviewURL: 'OFF-LEDGER DATA',
+    title: 'Ultra Slim Wallet: Keep Your Cards & Cash in Style',
+    description:
+      "Our minimalist wallet is designed to hold all of your essentials while taking up minimal space in your pocket. Made from high-quality materials, it's both durable and stylish.",
+    overviewUrl: 'https://www.coolwallets.com/minimalist-wallet-campaign',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('4_MONTH_BEFORE'),
@@ -201,31 +206,36 @@ async function historicalFailedFundraise(
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('3_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Initial funds payout',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('2_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Design and prototype wallet',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('1_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Launch wallet on all major platforms',
         payoutPercent: 50,
       },
     ],
   }
 
-  const campaignId = await DevApplication.createCampaign(client, params)
+  const campaignId = await DevApplication.createCampaign(
+    client,
+    database,
+    params
+  )
 
   console.log('campaignId', campaignId)
 }
 
 async function historicalFailedMilestone2of3(
   client: Client,
+  database: Connection,
   accounts: Wallet[]
 ): Promise<void> {
   console.log('historical-failed-milestone-2-of-3')
@@ -249,9 +259,10 @@ async function historicalFailedMilestone2of3(
       dateOffsetToUnixTimestampInSeconds('6_MONTH_BEFORE'),
     ownerWallet: owner,
     depositInDrops: 100000100n,
-    title: 'OFF-LEDGER DATA',
-    description: 'OFF-LEDGER DATA',
-    overviewURL: 'OFF-LEDGER DATA',
+    title: 'The Ultimate Strategy Board Game for Family Game Night',
+    description:
+      "Our board game is a fun and challenging strategy game that can be played by 2-4 players. With high-quality components and engaging gameplay, it's perfect for game night with friends and family.",
+    overviewUrl: 'https://www.nightowlgames.com/board-game-campaign',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('5_MONTH_BEFORE'),
@@ -259,25 +270,29 @@ async function historicalFailedMilestone2of3(
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('4_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Initial funds payout',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('2_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Design and prototype board game',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('1_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Launch board game',
         payoutPercent: 50,
       },
     ],
   }
 
-  const campaignId = await DevApplication.createCampaign(client, params)
+  const campaignId = await DevApplication.createCampaign(
+    client,
+    database,
+    params
+  )
 
   console.log('campaignId', campaignId)
 
@@ -376,6 +391,7 @@ async function historicalFailedMilestone2of3(
 
 async function historicalSucceeded(
   client: Client,
+  database: Connection,
   accounts: Wallet[]
 ): Promise<void> {
   console.log('historical-succeeded')
@@ -399,9 +415,10 @@ async function historicalSucceeded(
       dateOffsetToUnixTimestampInSeconds('6_MONTH_BEFORE'),
     ownerWallet: owner,
     depositInDrops: 100000100n,
-    title: 'OFF-LEDGER DATA',
-    description: 'OFF-LEDGER DATA',
-    overviewURL: 'OFF-LEDGER DATA',
+    title: 'The Revolutionary Documentary Exposing Hidden Truths',
+    description:
+      "Our documentary film explores a compelling and important topic that is often overlooked in mainstream media. With high-quality production values and expert interviews, it's a must-see for anyone interested in this subject.",
+    overviewUrl: 'https://www.insightsfilmco.com/documentary-film-campaign',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('5_MONTH_BEFORE'),
@@ -409,25 +426,29 @@ async function historicalSucceeded(
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('4_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Initial funds to cover production costs',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('2_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Research and conduct interviews for documentary',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('1_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Publish documentary on all major streaming platforms',
         payoutPercent: 50,
       },
     ],
   }
 
-  const campaignId = await DevApplication.createCampaign(client, params)
+  const campaignId = await DevApplication.createCampaign(
+    client,
+    database,
+    params
+  )
 
   console.log('campaignId', campaignId)
 
@@ -503,6 +524,7 @@ async function historicalSucceeded(
 
 async function inProgressFundraise(
   client: Client,
+  database: Connection,
   accounts: Wallet[]
 ): Promise<void> {
   console.log('in-progress-fundraise')
@@ -524,9 +546,10 @@ async function inProgressFundraise(
   const params: CreateCampaignParams = {
     ownerWallet: owner,
     depositInDrops: 100000100n,
-    title: 'OFF-LEDGER DATA',
-    description: 'OFF-LEDGER DATA',
-    overviewURL: 'OFF-LEDGER DATA',
+    title: 'Revolutionize Your Hydration with the Ultimate Smart Water Bottle',
+    description:
+      "Our smart water bottle uses advanced sensors and algorithms to track your hydration levels and provide personalized hydration recommendations. With a sleek and modern design, it's perfect for staying hydrated on-the-go.",
+    overviewUrl: 'https://www.h2osmartbottle.com/smart-water-bottle-campaign',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
@@ -534,25 +557,25 @@ async function inProgressFundraise(
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('2_MONTH_AFTER'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Initial funds to cover production costs',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('3_MONTH_AFTER'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Design and prototype smart water bottle',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('5_MONTH_AFTER'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Launch smart water bottle',
         payoutPercent: 50,
       },
     ],
   }
 
-  const campaignId = await Application.createCampaign(client, params)
+  const campaignId = await Application.createCampaign(client, database, params)
 
   console.log('campaignId', campaignId)
 
@@ -574,6 +597,7 @@ async function inProgressFundraise(
 
 async function inProgressMilestone1of3VoteRejectOpportunity(
   client: Client,
+  database: Connection,
   accounts: Wallet[]
 ): Promise<void> {
   console.log('in-progress-milestone-1-of-3 ; #voteReject-opportunity')
@@ -597,9 +621,10 @@ async function inProgressMilestone1of3VoteRejectOpportunity(
       dateOffsetToUnixTimestampInSeconds('2_MONTH_BEFORE'),
     ownerWallet: owner,
     depositInDrops: 100000100n,
-    title: 'OFF-LEDGER DATA',
-    description: 'OFF-LEDGER DATA',
-    overviewURL: 'OFF-LEDGER DATA',
+    title: 'Create Your Perfect Watch with the Ultimate Customizable Watch',
+    description:
+      "Our customizable watch allows you to mix and match different components to create a unique and personalized watch that reflects your style. With high-quality materials and a wide range of options, it's perfect for watch enthusiasts and fashion-forward individuals.",
+    overviewUrl: 'https://www.zeitgeistwatches.com/customizable-watch-campaign',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('1_MONTH_BEFORE'),
@@ -607,25 +632,29 @@ async function inProgressMilestone1of3VoteRejectOpportunity(
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Initial funds to cover production costs',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('2_MONTH_AFTER'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Design and prototype customizable watch',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('3_MONTH_AFTER'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Launch customizable watch',
         payoutPercent: 50,
       },
     ],
   }
 
-  const campaignId = await DevApplication.createCampaign(client, params)
+  const campaignId = await DevApplication.createCampaign(
+    client,
+    database,
+    params
+  )
 
   console.log('campaignId', campaignId)
 
@@ -673,6 +702,7 @@ async function inProgressMilestone1of3VoteRejectOpportunity(
 
 async function failedMilestone2of3Payout1of3DoneRequestRefundPaymentOpportunity(
   client: Client,
+  database: Connection,
   accounts: Wallet[]
 ): Promise<void> {
   console.log(
@@ -698,9 +728,11 @@ async function failedMilestone2of3Payout1of3DoneRequestRefundPaymentOpportunity(
       dateOffsetToUnixTimestampInSeconds('3_MONTH_BEFORE'),
     ownerWallet: owner,
     depositInDrops: 100000100n,
-    title: 'OFF-LEDGER DATA',
-    description: 'OFF-LEDGER DATA',
-    overviewURL: 'OFF-LEDGER DATA',
+    title: 'The Ultimate Multi-Purpose Backpack for All Your Adventures',
+    description:
+      "Our backpack is designed for all your adventures - whether it's hiking, traveling, or commuting. With multiple compartments and high-quality materials, it's perfect for carrying all your essentials in style.",
+    overviewUrl:
+      'https://www.adventurebackpackco.com/multi-purpose-backpack-campaign',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('2_MONTH_BEFORE'),
@@ -708,25 +740,29 @@ async function failedMilestone2of3Payout1of3DoneRequestRefundPaymentOpportunity(
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('1_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Initial funds to cover design and prototype costs',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Design and prototype multi-purpose backpack',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('2_MONTH_AFTER'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Launch multi-purpose backpack',
         payoutPercent: 50,
       },
     ],
   }
 
-  const campaignId = await DevApplication.createCampaign(client, params)
+  const campaignId = await DevApplication.createCampaign(
+    client,
+    database,
+    params
+  )
 
   console.log('campaignId', campaignId)
 
@@ -797,6 +833,7 @@ async function failedMilestone2of3Payout1of3DoneRequestRefundPaymentOpportunity(
 
 async function inProgressMilestone3of3Payout1of3DonePendingPayout2of3RequestMilestonePayoutPaymentOpportunity(
   client: Client,
+  database: Connection,
   accounts: Wallet[]
 ): Promise<void> {
   console.log(
@@ -822,9 +859,10 @@ async function inProgressMilestone3of3Payout1of3DonePendingPayout2of3RequestMile
       dateOffsetToUnixTimestampInSeconds('4_MONTH_BEFORE'),
     ownerWallet: owner,
     depositInDrops: 100000100n,
-    title: 'OFF-LEDGER DATA',
-    description: 'OFF-LEDGER DATA',
-    overviewURL: 'OFF-LEDGER DATA',
+    title: 'The Ultimate Fitness Tracker for Achieving Your Goals',
+    description:
+      "Our fitness tracker uses advanced sensors and algorithms to track your fitness goals and provide personalized recommendations. With a sleek and modern design, it's perfect for staying motivated and reaching your fitness goals.",
+    overviewUrl: 'https://www.fittechco.com/fitness-tracker-campaign',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('3_MONTH_BEFORE'),
@@ -832,25 +870,29 @@ async function inProgressMilestone3of3Payout1of3DonePendingPayout2of3RequestMile
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('2_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Initial funds to cover design and prototype costs',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('1_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Design and prototype fitness tracker',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Launch fitness tracker on all fitness platforms',
         payoutPercent: 50,
       },
     ],
   }
 
-  const campaignId = await DevApplication.createCampaign(client, params)
+  const campaignId = await DevApplication.createCampaign(
+    client,
+    database,
+    params
+  )
 
   console.log('campaignId', campaignId)
 
@@ -904,6 +946,7 @@ async function inProgressMilestone3of3Payout1of3DonePendingPayout2of3RequestMile
 
 async function completedAllMilestonePayout1and2of3DonePendingPayout3of3RequestMilestonePayoutPaymentOpportunity(
   client: Client,
+  database: Connection,
   accounts: Wallet[]
 ): Promise<void> {
   console.log(
@@ -929,9 +972,10 @@ async function completedAllMilestonePayout1and2of3DonePendingPayout3of3RequestMi
       dateOffsetToUnixTimestampInSeconds('5_MONTH_BEFORE'),
     ownerWallet: owner,
     depositInDrops: 100000100n,
-    title: 'OFF-LEDGER DATA',
-    description: 'OFF-LEDGER DATA',
-    overviewURL: 'OFF-LEDGER DATA',
+    title: 'The Ultimate Wireless Earbuds for Immersive Audio Experience',
+    description:
+      "Our wireless earbuds use advanced audio technology to provide an immersive audio experience. With high-quality sound and noise-cancellation, it's perfect for music lovers and audiophiles.",
+    overviewUrl: 'https://www.audiogearco.com/wireless-earbuds-campaign',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('4_MONTH_BEFORE'),
@@ -939,25 +983,29 @@ async function completedAllMilestonePayout1and2of3DonePendingPayout3of3RequestMi
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('3_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Initial funds to cover design and prototype costs',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('2_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Design and prototype wireless earbuds',
         payoutPercent: 25,
       },
       {
         endDateInUnixSeconds:
           dateOffsetToUnixTimestampInSeconds('1_MONTH_BEFORE'),
-        title: 'OFF-LEDGER DATA',
+        title: 'Launch wireless earbuds on Kickstarter',
         payoutPercent: 50,
       },
     ],
   }
 
-  const campaignId = await DevApplication.createCampaign(client, params)
+  const campaignId = await DevApplication.createCampaign(
+    client,
+    database,
+    params
+  )
 
   console.log('campaignId', campaignId)
 
@@ -1024,36 +1072,47 @@ async function completedAllMilestonePayout1and2of3DonePendingPayout3of3RequestMi
 
 async function run() {
   await connectClient()
+  const database = await connectDatabase()
+  await CampaignDatabaseModel.deleteMany({})
 
   const accounts = await setupAccounts(client)
 
   const promises = []
   promises.push(
-    historicalFailedFundraise(client, accounts['historical-failed-fundraise']),
+    historicalFailedFundraise(
+      client,
+      database,
+      accounts['historical-failed-fundraise']
+    ),
     historicalFailedMilestone2of3(
       client,
+      database,
       accounts['historical-failed-milestone-2-of-3']
     ),
-    historicalSucceeded(client, accounts['historical-succeeded']),
-    inProgressFundraise(client, accounts['in-progress-fundraise']),
+    historicalSucceeded(client, database, accounts['historical-succeeded']),
+    inProgressFundraise(client, database, accounts['in-progress-fundraise']),
     inProgressMilestone1of3VoteRejectOpportunity(
       client,
+      database,
       accounts['in-progress-milestone-1-of-3 ; #voteReject-opportunity']
     ),
     inProgressMilestone3of3Payout1of3DonePendingPayout2of3RequestMilestonePayoutPaymentOpportunity(
       client,
+      database,
       accounts[
         'in-progress-milestone-3-of-3 ; payout 1 of 3 done, pending payout 2 of 3 ; #requestMilestonePayoutPayment-opportunity'
       ]
     ),
     completedAllMilestonePayout1and2of3DonePendingPayout3of3RequestMilestonePayoutPaymentOpportunity(
       client,
+      database,
       accounts[
         'completed-all-milestones; payouts 1 & 2 of 3 done, pending payout 3 of 3 ; #requestMilestonePayoutPayment-opportunity'
       ]
     ),
     failedMilestone2of3Payout1of3DoneRequestRefundPaymentOpportunity(
       client,
+      database,
       accounts[
         'failed-milestone-2-of-3 ; payout 1 of 3 done ; #requestRefundPayment-opportunity'
       ]
@@ -1063,6 +1122,7 @@ async function run() {
   await Promise.all(promises)
 
   await disconnectClient()
+  database.close()
 }
 
 run()

@@ -33,6 +33,12 @@ import { MilestonePayload } from '../app/models/MilestonePayload'
 import { Application } from '../app/Application'
 import { DevVoteRejectMilestonePayload } from './DevVoteRejectMilestonePayload'
 import { DevVoteApproveMilestonePayload } from './DevVoteApproveMilestonePayload'
+import connectDatabase from '../database'
+import {
+  ICampaignDatabaseModel,
+  CampaignDatabaseModel,
+} from '../database/models/campaign.model'
+import { Connection } from 'mongoose'
 
 export interface DevCreateCampaignParams {
   mockCurrentTimeInUnixSeconds: bigint
@@ -40,7 +46,7 @@ export interface DevCreateCampaignParams {
   depositInDrops: bigint
   title: string
   description: string
-  overviewURL: string
+  overviewUrl: string
   fundRaiseGoalInDrops: bigint
   fundRaiseEndDateInUnixSeconds: bigint
   milestones: Array<{
@@ -71,10 +77,14 @@ export type DevVoteApproveMilestoneParams = DevInvokeCampaignParams
 export class DevApplication {
   static async createCampaign(
     client: Client,
+    database: Connection,
     params: DevCreateCampaignParams
   ): Promise<number> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
+    }
+    if (database.readyState !== 1) {
+      throw new Error('MongoDB database is not connected')
     }
 
     const {
@@ -83,7 +93,7 @@ export class DevApplication {
       depositInDrops,
       title,
       description,
-      overviewURL,
+      overviewUrl,
       fundRaiseGoalInDrops,
       fundRaiseEndDateInUnixSeconds,
       milestones,
@@ -93,7 +103,7 @@ export class DevApplication {
     this._validateDevCreateCampaignParams(params)
 
     /* Step 2. Generate a random unique campaign ID */
-    const campaigns = await Application.viewCampaigns(client)
+    const campaigns = await Application.viewCampaigns(client, database)
     let destinationTag: number
     do {
       destinationTag = generateRandomDestinationTag()
@@ -146,7 +156,25 @@ export class DevApplication {
     /* Step 7. Check Payment transaction result */
     this._validateTxResponse(paymentResponse, 'createCampaign')
 
-    /* TODO: Step 6. Add title(campaign & milestones), description, overviewURL fields to an off-ledger database (e.g. MongoDB) */
+    /* Step 8. Add title(campaign & milestones), description, overviewUrl fields to an off-ledger database (e.g. MongoDB) */
+    const campaignData: ICampaignDatabaseModel = {
+      id: campaignId,
+      title,
+      description,
+      overviewUrl,
+      milestones: milestones.map((milestone) => {
+        return {
+          endDateInUnixSeconds: milestone.endDateInUnixSeconds.toString(),
+          title: milestone.title,
+        }
+      }),
+    }
+    const campaign = new CampaignDatabaseModel(campaignData)
+    try {
+      await campaign.save()
+    } catch (error) {
+      throw new Error(`Error saving campaign to database: ${error}`)
+    }
 
     return campaignId
   }
@@ -352,7 +380,7 @@ export class DevApplication {
       depositInDrops,
       title,
       description,
-      overviewURL,
+      overviewUrl,
       fundRaiseGoalInDrops,
       fundRaiseEndDateInUnixSeconds,
       milestones,
@@ -384,11 +412,11 @@ export class DevApplication {
       )
     }
     if (
-      overviewURL.length < 1 ||
-      overviewURL.length > OVERVIEW_URL_MAX_LENGTH
+      overviewUrl.length < 1 ||
+      overviewUrl.length > OVERVIEW_URL_MAX_LENGTH
     ) {
       throw new Error(
-        `Invalid overviewURL length ${overviewURL.length}. Must be between 1 and ${OVERVIEW_URL_MAX_LENGTH}`
+        `Invalid overviewUrl length ${overviewUrl.length}. Must be between 1 and ${OVERVIEW_URL_MAX_LENGTH}`
       )
     }
     if (fundRaiseGoalInDrops < 1 || fundRaiseGoalInDrops > 2n ** 64n - 1n) {

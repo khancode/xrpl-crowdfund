@@ -43,13 +43,18 @@ import { VoteRejectMilestonePayload } from './models/VoteRejectMilestonePayload'
 import { VoteApproveMilestonePayload } from './models/VoteApproveMilestonePayload'
 import { RequestRefundPaymentPayload } from './models/RequestRefundPaymentPayload'
 import { RequestMilestonePayoutPaymentPayload } from './models/RequestMilestonePayoutPaymentPayload'
+import {
+  CampaignDatabaseModel,
+  ICampaignDatabaseModel,
+} from '../database/models/campaign.model'
+import { Connection } from 'mongoose'
 
 export interface CreateCampaignParams {
   ownerWallet: Wallet
   depositInDrops: bigint
   title: string
   description: string
-  overviewURL: string
+  overviewUrl: string
   fundRaiseGoalInDrops: bigint
   fundRaiseEndDateInUnixSeconds: bigint
   milestones: Array<{
@@ -118,11 +123,14 @@ export class Application {
 
   static async createCampaign(
     client: Client,
-    params: CreateCampaignParams,
-    bypassValidation = false // used for adding test data with past dates
+    database: Connection,
+    params: CreateCampaignParams
   ): Promise<number> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
+    }
+    if (database.readyState !== 1) {
+      throw new Error('MongoDB database is not connected')
     }
 
     const {
@@ -130,19 +138,17 @@ export class Application {
       depositInDrops,
       title,
       description,
-      overviewURL,
+      overviewUrl,
       fundRaiseGoalInDrops,
       fundRaiseEndDateInUnixSeconds,
       milestones,
     } = params
 
     /* Step 1. Input validation */
-    if (!bypassValidation) {
-      this._validateCreateCampaignParams(params)
-    }
+    this._validateCreateCampaignParams(params)
 
     /* Step 2. Generate a random unique campaign ID */
-    const campaigns = await Application.viewCampaigns(client)
+    const campaigns = await Application.viewCampaigns(client, database)
     let destinationTag: number
     do {
       destinationTag = generateRandomDestinationTag()
@@ -194,29 +200,57 @@ export class Application {
     /* Step 7. Check Payment transaction result */
     this._validateTxResponse(paymentResponse, 'createCampaign')
 
-    /* TODO: Step 6. Add title(campaign & milestones), description, overviewURL fields to an off-ledger database (e.g. MongoDB) */
+    /* Step 8. Add title(campaign & milestones), description, overviewUrl fields to an off-ledger database (e.g. MongoDB) */
+    const campaignData: ICampaignDatabaseModel = {
+      id: campaignId,
+      title,
+      description,
+      overviewUrl,
+      milestones: milestones.map((milestone) => {
+        return {
+          endDateInUnixSeconds: milestone.endDateInUnixSeconds.toString(),
+          title: milestone.title,
+        }
+      }),
+    }
+    const campaign = new CampaignDatabaseModel(campaignData)
+    try {
+      await campaign.save()
+    } catch (error) {
+      throw new Error(`Error saving campaign to database: ${error}`)
+    }
 
     return campaignId
   }
 
-  static async viewCampaigns(client: Client): Promise<Campaign[]> {
+  static async viewCampaigns(
+    client: Client,
+    database: Connection
+  ): Promise<Campaign[]> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
     }
 
-    const applicationState = await StateUtility.getApplicationState(client)
+    const applicationState = await StateUtility.getApplicationState(
+      client,
+      database
+    )
     return applicationState.campaigns
   }
 
   static async getCampaignById(
     client: Client,
+    database: Connection,
     campaignId: number
   ): Promise<Campaign> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
     }
+    if (database.readyState !== 1) {
+      throw new Error('MongoDB database is not connected')
+    }
 
-    const campaigns = await Application.viewCampaigns(client)
+    const campaigns = await Application.viewCampaigns(client, database)
     const campaign = campaigns.find((campaign) => campaign.id === campaignId)
     if (!campaign) {
       throw new Error(`Campaign with ID ${campaignId} not found`)
@@ -226,17 +260,14 @@ export class Application {
 
   static async fundCampaign(
     client: Client,
-    params: FundCampaignParams,
-    bypassValidation = false // used for adding test data with past dates
+    params: FundCampaignParams
   ): Promise<number> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
     }
 
     /* Step 1. Input validation */
-    if (!bypassValidation) {
-      this._validateFundCampaignParams(params)
-    }
+    this._validateFundCampaignParams(params)
 
     const { backerWallet, campaignId, fundAmountInDrops } = params
 
@@ -503,7 +534,7 @@ export class Application {
       depositInDrops,
       title,
       description,
-      overviewURL,
+      overviewUrl,
       fundRaiseGoalInDrops,
       fundRaiseEndDateInUnixSeconds,
       milestones,
@@ -537,11 +568,11 @@ export class Application {
       )
     }
     if (
-      overviewURL.length < 1 ||
-      overviewURL.length > OVERVIEW_URL_MAX_LENGTH
+      overviewUrl.length < 1 ||
+      overviewUrl.length > OVERVIEW_URL_MAX_LENGTH
     ) {
       throw new Error(
-        `Invalid overviewURL length ${overviewURL.length}. Must be between 1 and ${OVERVIEW_URL_MAX_LENGTH}`
+        `Invalid overviewUrl length ${overviewUrl.length}. Must be between 1 and ${OVERVIEW_URL_MAX_LENGTH}`
       )
     }
     if (fundRaiseGoalInDrops < 1 || fundRaiseGoalInDrops > 2n ** 64n - 1n) {

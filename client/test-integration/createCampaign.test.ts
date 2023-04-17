@@ -15,8 +15,11 @@ import {
   MILESTONE_STATE_DERIVE_FLAG,
 } from '../app/constants'
 import { HSVMilestone } from '../app/models/HSVMilestone'
+import connectDatabase from '../database'
+import { Connection } from 'mongoose'
 
 describe('createCampaign', () => {
+  let database: Connection
   let owner: Wallet
   let backer1: Wallet
   let backer2: Wallet
@@ -24,6 +27,7 @@ describe('createCampaign', () => {
 
   beforeAll(async () => {
     await connectClient()
+    database = await connectDatabase()
 
     const createCampaignAccounts = accounts['createCampaign']
     owner = Wallet.fromSeed(createCampaignAccounts[0].seed)
@@ -34,6 +38,7 @@ describe('createCampaign', () => {
 
   afterAll(async () => {
     await disconnectClient()
+    await database.close()
   })
 
   it('should create a campaign with 3 milestones', async () => {
@@ -53,9 +58,11 @@ describe('createCampaign', () => {
     const params: CreateCampaignParams = {
       ownerWallet: owner,
       depositInDrops: 100000100n,
-      title: 'OFF-LEDGER DATA',
-      description: 'OFF-LEDGER DATA',
-      overviewURL: 'OFF-LEDGER DATA',
+      title: 'The Ultimate Multi-Purpose Backpack for All Your Adventures',
+      description:
+        "Our backpack is designed for all your adventures - whether it's hiking, traveling, or commuting. With multiple compartments and high-quality materials, it's perfect for carrying all your essentials in style.",
+      overviewUrl:
+        'https://www.adventurebackpackco.com/multi-purpose-backpack-campaign',
       fundRaiseGoalInDrops: 100000000n,
       fundRaiseEndDateInUnixSeconds:
         dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
@@ -63,25 +70,29 @@ describe('createCampaign', () => {
         {
           endDateInUnixSeconds:
             dateOffsetToUnixTimestampInSeconds('2_MONTH_AFTER'),
-          title: 'OFF-LEDGER DATA',
+          title: 'Initial funds to cover design and prototype costs',
           payoutPercent: 25,
         },
         {
           endDateInUnixSeconds:
             dateOffsetToUnixTimestampInSeconds('3_MONTH_AFTER'),
-          title: 'OFF-LEDGER DATA',
+          title: 'Design and prototype multi-purpose backpack',
           payoutPercent: 25,
         },
         {
           endDateInUnixSeconds:
             dateOffsetToUnixTimestampInSeconds('5_MONTH_AFTER'),
-          title: 'OFF-LEDGER DATA',
+          title: 'Launch multi-purpose backpack',
           payoutPercent: 50,
         },
       ],
     }
 
-    const campaignId = await Application.createCampaign(client, params)
+    const campaignId = await Application.createCampaign(
+      client,
+      database,
+      params
+    )
 
     // Verify that the campaign was created and saved to Hook State
     const hookStateAfter = await StateUtility.getHookState(client)

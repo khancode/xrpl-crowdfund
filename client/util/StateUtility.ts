@@ -19,6 +19,8 @@ import { Milestone } from '../app/models/Milestone'
 import { FundTransaction } from '../app/models/FundTransaction'
 import { HSVFundTransactionsPage } from '../app/models/HSVFundTransactionsPage'
 import { Backer } from '../app/models/Backer'
+import { Connection } from 'mongoose'
+import { CampaignDatabaseModel } from '../database/models/campaign.model'
 
 export class StateUtility {
   static async getHookState<T extends BaseModel>(
@@ -68,9 +70,15 @@ export class StateUtility {
     return hookState
   }
 
-  static async getApplicationState(client: Client): Promise<ApplicationState> {
+  static async getApplicationState(
+    client: Client,
+    database: Connection
+  ): Promise<ApplicationState> {
     if (!client.isConnected()) {
       throw new Error('xrpl Client is not connected')
+    }
+    if (database.readyState !== 1) {
+      throw new Error('MongoDB database is not connected')
     }
 
     let hookState
@@ -100,6 +108,16 @@ export class StateUtility {
 
       if (dataLookupFlag === DATA_LOOKUP_GENERAL_INFO_FLAG) {
         const generalInfo = value.decoded as HSVCampaignGeneralInfo
+        const campaignDatabaseEntry = await CampaignDatabaseModel.findOne({
+          id: destinationTag,
+        })
+          .lean()
+          .exec()
+        if (!campaignDatabaseEntry) {
+          throw new Error(
+            `CampaignDatabaseModel entry not found for campaignId ${destinationTag}`
+          )
+        }
         const campaignState = deriveCampaignState(generalInfo)
         const milestonesStates = deriveMilestonesStates(
           campaignState,
@@ -112,7 +130,7 @@ export class StateUtility {
               milestonesStates[index],
               milestone.endDateInUnixSeconds,
               milestone.payoutPercent,
-              'OFF-LEDGER DATA'
+              campaignDatabaseEntry.milestones[index].title
             )
           }
         )
@@ -121,9 +139,9 @@ export class StateUtility {
           key.destinationTag,
           campaignState,
           generalInfo.owner,
-          'OFF-LEDGER DATA',
-          'OFF-LEDGER DATA',
-          'OFF-LEDGER DATA',
+          campaignDatabaseEntry.title,
+          campaignDatabaseEntry.description,
+          campaignDatabaseEntry.overviewUrl,
           generalInfo.fundRaiseGoalInDrops,
           generalInfo.fundRaiseEndDateInUnixSeconds,
           generalInfo.totalAmountRaisedInDrops,

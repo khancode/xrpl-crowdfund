@@ -16,6 +16,7 @@ import {
   connectClient,
   disconnectClient,
 } from '../../client/util/xrplClient'
+import connectDatabase from '../../client/database'
 
 const PORT = 3001
 const app = express()
@@ -24,13 +25,14 @@ app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 
 connectClient()
+const database = connectDatabase()
 
 type PostCampaignParams = {
   ownerSeed: string
   depositInDrops: string
   title: string
   description: string
-  overviewURL: string
+  overviewUrl: string
   fundRaiseGoalInDrops: string
   fundRaiseEndDateInUnixSeconds: string
   milestones: Array<{
@@ -63,7 +65,7 @@ type PostRequestMilestonePayoutPayment = {
 
 app.get('/campaigns', async (req: Request, res: Response) => {
   try {
-    const campaigns = await Application.viewCampaigns(client)
+    const campaigns = await Application.viewCampaigns(client, database)
     const serializedCampaigns = campaigns.map((campaign) => {
       return campaign.serialize()
     })
@@ -77,7 +79,7 @@ app.get('/campaigns', async (req: Request, res: Response) => {
 app.get('/campaigns/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id)
-    const campaign = await Application.getCampaignById(client, id)
+    const campaign = await Application.getCampaignById(client, database, id)
     const serializedCampaign = campaign.serialize()
     res.send(serializedCampaign)
   } catch (err: any) {
@@ -112,7 +114,7 @@ app.post('/campaigns', async (req: Request, res: Response) => {
       depositInDrops: BigInt(params.depositInDrops),
       title: params.title,
       description: params.description,
-      overviewURL: params.overviewURL,
+      overviewUrl: params.overviewUrl,
       fundRaiseGoalInDrops: BigInt(params.fundRaiseGoalInDrops),
       fundRaiseEndDateInUnixSeconds: BigInt(
         params.fundRaiseEndDateInUnixSeconds
@@ -127,6 +129,7 @@ app.post('/campaigns', async (req: Request, res: Response) => {
     }
     const campaignId = await Application.createCampaign(
       client,
+      database,
       createCampaignParams
     )
     res.send({ campaignId })
@@ -251,10 +254,18 @@ const shutdown = (signal: string) => {
 
   server.close(() => {
     console.log('HTTP server closed')
-    disconnectClient().then(() => {
-      console.log('XRPL client disconnected')
-      process.exit(0)
-    })
+    disconnectClient()
+      .then(() => {
+        console.log('XRPL client disconnected')
+        database.close().then(() => {
+          console.log('Database connection closed')
+          process.exit(0)
+        })
+      })
+      .catch((error) => {
+        console.error('Error during cleanup:', error)
+        process.exit(1)
+      })
   })
 
   setTimeout(() => {

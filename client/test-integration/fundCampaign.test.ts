@@ -21,8 +21,11 @@ import {
   FUND_TRANSACTION_STATE_APPROVE_FLAG,
 } from '../app/constants'
 import { HSVFundTransaction } from '../app/models/HSVFundTransaction'
+import { Connection } from 'mongoose'
+import connectDatabase from '../database'
 
 describe('fundCampaign', () => {
+  let database: Connection
   let owner: Wallet
   let backer1: Wallet
   let backer2: Wallet
@@ -31,6 +34,7 @@ describe('fundCampaign', () => {
 
   beforeAll(async () => {
     await connectClient()
+    database = await connectDatabase()
 
     const fundCampaignAccounts = accounts['fundCampaign']
     owner = Wallet.fromSeed(fundCampaignAccounts[0].seed)
@@ -41,9 +45,10 @@ describe('fundCampaign', () => {
     const params: CreateCampaignParams = {
       ownerWallet: owner,
       depositInDrops: 100000100n,
-      title: 'OFF-LEDGER DATA',
-      description: 'OFF-LEDGER DATA',
-      overviewURL: 'OFF-LEDGER DATA',
+      title: 'The Ultimate Fitness Tracker for Achieving Your Goals',
+      description:
+        "Our fitness tracker uses advanced sensors and algorithms to track your fitness goals and provide personalized recommendations. With a sleek and modern design, it's perfect for staying motivated and reaching your fitness goals.",
+      overviewUrl: 'https://www.fittechco.com/fitness-tracker-campaign',
       fundRaiseGoalInDrops: 100000000n,
       fundRaiseEndDateInUnixSeconds:
         dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
@@ -51,29 +56,30 @@ describe('fundCampaign', () => {
         {
           endDateInUnixSeconds:
             dateOffsetToUnixTimestampInSeconds('2_MONTH_AFTER'),
-          title: 'OFF-LEDGER DATA',
+          title: 'Initial funds to cover design and prototype costs',
           payoutPercent: 25,
         },
         {
           endDateInUnixSeconds:
             dateOffsetToUnixTimestampInSeconds('3_MONTH_AFTER'),
-          title: 'OFF-LEDGER DATA',
+          title: 'Design and prototype fitness tracker',
           payoutPercent: 25,
         },
         {
           endDateInUnixSeconds:
             dateOffsetToUnixTimestampInSeconds('5_MONTH_AFTER'),
-          title: 'OFF-LEDGER DATA',
+          title: 'Launch fitness tracker on all fitness platforms',
           payoutPercent: 50,
         },
       ],
     }
 
-    campaignId = await Application.createCampaign(client, params)
+    campaignId = await Application.createCampaign(client, database, params)
   })
 
   afterAll(async () => {
     await disconnectClient()
+    await database.close()
   })
 
   it('should fund a campaign with no backers', async () => {

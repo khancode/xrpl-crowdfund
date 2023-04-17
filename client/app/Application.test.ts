@@ -37,7 +37,7 @@ describe('Application', () => {
           depositInDrops: Application.getCreateCampaignDepositInDrops(),
           title: 'title',
           description: 'description',
-          overviewURL: 'overviewURL',
+          overviewUrl: 'overviewUrl',
           fundRaiseGoalInDrops: BigInt(25000000000),
           fundRaiseEndDateInUnixSeconds: nextMonthInUnixSeconds,
           milestones: [
@@ -99,20 +99,20 @@ describe('Application', () => {
         ).toThrow('Invalid description length 2501. Must be between 1 and 2500')
       })
 
-      it('should throw if overviewURL is too short', () => {
-        params.overviewURL = ''
+      it('should throw if overviewUrl is too short', () => {
+        params.overviewUrl = ''
         expect(() =>
           // @ts-expect-error - we're testing the private method
           Application._validateCreateCampaignParams(params)
-        ).toThrow('Invalid overviewURL length 0. Must be between 1 and 2300')
+        ).toThrow('Invalid overviewUrl length 0. Must be between 1 and 2300')
       })
 
-      it('should throw if overviewURL is too long', () => {
-        params.overviewURL = 'a'.repeat(2301)
+      it('should throw if overviewUrl is too long', () => {
+        params.overviewUrl = 'a'.repeat(2301)
         expect(() =>
           // @ts-expect-error - we're testing the private method
           Application._validateCreateCampaignParams(params)
-        ).toThrow('Invalid overviewURL length 2301. Must be between 1 and 2300')
+        ).toThrow('Invalid overviewUrl length 2301. Must be between 1 and 2300')
       })
 
       it('should throw if fundRaiseGoalInDrops is greater than the max value allowed', () => {
