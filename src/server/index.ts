@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express'
+import cors from 'cors'
 import bodyParser from 'body-parser'
 import { Wallet } from 'xrpl'
 import {
@@ -18,6 +19,7 @@ import {
 
 const PORT = 3001
 const app = express()
+app.use(cors())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 
@@ -78,6 +80,25 @@ app.get('/campaigns/:id', async (req: Request, res: Response) => {
     const campaign = await Application.getCampaignById(client, id)
     const serializedCampaign = campaign.serialize()
     res.send(serializedCampaign)
+  } catch (err: any) {
+    res.status(500).send(err.message)
+  }
+})
+
+app.get('/deposit-fee/:operation', async (req: Request, res: Response) => {
+  try {
+    const operation = req.params.operation
+    let depositInDrops
+
+    if (operation === 'create-campaign') {
+      depositInDrops = await Application.getCreateCampaignDepositInDrops()
+    } else if (operation === 'fund-campaign') {
+      depositInDrops = await Application.getFundCampaignDepositInDrops()
+    } else {
+      return res.status(400).send('Invalid operation specified')
+    }
+
+    res.send({ depositInDrops: depositInDrops.toString() })
   } catch (err: any) {
     res.status(500).send(err.message)
   }
