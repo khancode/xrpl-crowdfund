@@ -31,6 +31,7 @@ describe('constants', () => {
       ]
 
       const milestonesStates = deriveMilestonesStates(
+        'fundRaise',
         fundRaiseEndDateInUnixSeconds,
         milestones
       )

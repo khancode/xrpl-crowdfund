@@ -54,4 +54,44 @@ export class Campaign {
     this.fundTransactions = fundTransactions
     this.backers = backers
   }
+
+  /**
+   * Used to serialize the Campaign object into a JSON object
+   * that can be sent as a server response.
+   *
+   * Note: BigInt values are converted to strings because JSON
+   *       doesn't support BigInt values.
+   *
+   * @returns {object} - A JSON object representing the Campaign
+   *
+   * @memberof Campaign
+   */
+  serialize(): object {
+    return {
+      id: this.id,
+      state: this.state,
+      owner: this.owner,
+      title: this.title,
+      description: this.description,
+      overviewUrl: this.overviewUrl,
+      fundRaiseGoalInDrops: this.fundRaiseGoalInDrops.toString(),
+      fundRaiseEndDateInUnixSeconds:
+        this.fundRaiseEndDateInUnixSeconds.toString(),
+      totalAmountRaisedInDrops: this.totalAmountRaisedInDrops.toString(),
+      totalAmountNonRefundableInDrops:
+        this.totalAmountNonRefundableInDrops.toString(),
+      totalReserveAmountInDrops: this.totalReserveAmountInDrops.toString(),
+      totalRejectVotesForCurrentMilestone:
+        this.totalRejectVotesForCurrentMilestone,
+      milestones: this.milestones.map((milestone) => {
+        return milestone.serialize()
+      }),
+      fundTransactions: this.fundTransactions.map((fundTransaction) => {
+        return fundTransaction.serialize()
+      }),
+      backers: this.backers.map((backer) => {
+        return backer.serialize()
+      }),
+    }
+  }
 }

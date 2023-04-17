@@ -166,11 +166,14 @@ export const deriveCampaignState = (
 
 // convert milestone state flag to milestone state
 export const deriveMilestonesStates = (
+  campaignState: CampaignState,
   fundRaiseEndDateInUnixSeconds: bigint,
   milestones: HSVMilestone[]
 ): MilestoneState[] => {
   return milestones.map((milestone, index, array) => {
-    if (milestone.state === MILESTONE_STATE_DERIVE_FLAG) {
+    if (campaignState === `failedFundRaise`) {
+      return 'unstarted'
+    } else if (milestone.state === MILESTONE_STATE_DERIVE_FLAG) {
       const currentTimeUnixInSeconds = Math.floor(Date.now() / 1000)
       const prevEndDateInUnixSeconds =
         array[index - 1]?.endDateInUnixSeconds || fundRaiseEndDateInUnixSeconds
@@ -178,6 +181,15 @@ export const deriveMilestonesStates = (
         if (currentTimeUnixInSeconds < milestone.endDateInUnixSeconds) {
           return 'inProgress'
         } else {
+          if (campaignState.includes('failedMilestone')) {
+            const failedMilestoneIndex = Number(
+              campaignState.replace('failedMilestone', '')
+            )
+            if (index > failedMilestoneIndex - 1) {
+              return 'unstarted'
+            }
+          }
+
           return 'payoutAvailable'
         }
       }

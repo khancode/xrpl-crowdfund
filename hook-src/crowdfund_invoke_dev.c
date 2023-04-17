@@ -15,7 +15,7 @@ int64_t hook(uint32_t reserved) {
         rollback(SBUF("Transaction type must be Invoke. HookOn field is incorrectly set."), 50);
     }
 
-    uint8_t blob_buffer[7]; // 1 byte prefix + 6 bytes max blob length
+    uint8_t blob_buffer[15]; // 1 byte prefix + 8 bytes mockCurrentTimeInUnixSeconds + 6 bytes max blob length
     int64_t blob_len = otxn_field(SBUF(blob_buffer), sfBlob);
     uint8_t* blob_ptr = blob_buffer;
     trace(SBUF("blob (hex):"), blob_ptr, blob_len, 1);
@@ -43,8 +43,14 @@ int64_t hook(uint32_t reserved) {
         current_time_unix_seconds = GET_LAST_LEDGER_TIME_IN_UNIX_SECONDS();
     }
 
-    if (mode_flag == MODE_VOTE_REJECT_MILESTONE_FLAG || mode_flag == MODE_VOTE_APPROVE_MILESTONE_FLAG) {
-        const bool IS_VOTE_REJECT = mode_flag == MODE_VOTE_REJECT_MILESTONE_FLAG;
+    if (
+        mode_flag == MODE_VOTE_REJECT_MILESTONE_FLAG ||
+        mode_flag == MODE_VOTE_APPROVE_MILESTONE_FLAG ||
+        mode_flag == MODE_DEV_VOTE_REJECT_MILESTONE_FLAG ||
+        mode_flag == MODE_DEV_VOTE_APPROVE_MILESTONE_FLAG
+    ) {
+        const bool IS_VOTE_REJECT =
+            mode_flag == MODE_VOTE_REJECT_MILESTONE_FLAG || mode_flag == MODE_DEV_VOTE_REJECT_MILESTONE_FLAG;
         if (IS_VOTE_REJECT) {
             if (IS_DEV_MODE) {
                 TRACESTR("Develop Mode: Vote Reject Milestone");

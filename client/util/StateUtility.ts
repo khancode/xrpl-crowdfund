@@ -100,7 +100,9 @@ export class StateUtility {
 
       if (dataLookupFlag === DATA_LOOKUP_GENERAL_INFO_FLAG) {
         const generalInfo = value.decoded as HSVCampaignGeneralInfo
+        const campaignState = deriveCampaignState(generalInfo)
         const milestonesStates = deriveMilestonesStates(
+          campaignState,
           generalInfo.fundRaiseEndDateInUnixSeconds,
           generalInfo.milestones
         )
@@ -117,7 +119,7 @@ export class StateUtility {
 
         const campaign = new Campaign(
           key.destinationTag,
-          deriveCampaignState(generalInfo),
+          campaignState,
           generalInfo.owner,
           'OFF-LEDGER DATA',
           'OFF-LEDGER DATA',

@@ -112,7 +112,7 @@ export default async (): Promise<void> => {
 
   /* 5. Fund a wallet for each one in the list synchronously waiting 10 second between each fund */
   for (const wallet of walletsToFund) {
-    console.log(`refunding wallet ${wallet.classicAddress}...`)
+    console.log(`funding wallet ${wallet.classicAddress}...`)
     try {
       await fundWallet(wallet)
     } catch (err: any) {
