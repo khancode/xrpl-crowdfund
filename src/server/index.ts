@@ -17,6 +17,11 @@ import {
   disconnectClient,
 } from '../../client/util/xrplClient'
 import connectDatabase from '../../client/database'
+import {
+  IUserDatabaseModel,
+  UserDatabaseModel,
+} from '../../client/database/models/user.model'
+import { fundWallet } from '../../client/util/fundWallet'
 
 const PORT = 3001
 const app = express()
@@ -26,6 +31,18 @@ app.use(bodyParser.json())
 
 connectClient()
 const database = connectDatabase()
+
+type PostUsersCreateParams = {
+  username: string
+  password: string
+  xrplWalletSeed: string
+}
+
+type PostUsersLoginParams = {
+  username: string
+  password: string
+  xrplWalletSeed: string
+}
 
 type PostCampaignParams = {
   ownerSeed: string
@@ -62,6 +79,75 @@ type PostRequestRefundPayment = {
 type PostRequestMilestonePayoutPayment = {
   ownerWalletSeed: string
 }
+
+app.post('/users/create', async (req: Request, res: Response) => {
+  try {
+    const params: PostUsersCreateParams = req.body
+    const { username, password } = params
+    if (!username || !password) {
+      throw new Error('username and/or password is missing')
+    }
+
+    const wallet = await fundWallet()
+    if (!wallet || !wallet.seed) {
+      throw new Error('Error funding wallet')
+    }
+    const xrplWalletSeed = wallet.seed
+
+    const userData: IUserDatabaseModel = {
+      username,
+      password,
+      xrplWalletSeed,
+    }
+    const user = new UserDatabaseModel(userData)
+    try {
+      await user.save()
+    } catch (error: any) {
+      if (error.code === 11000) {
+        throw new Error(`Username already exists: ${username}`)
+      }
+      throw new Error(`Error saving user to database: ${error}`)
+    }
+
+    res.send({ username, password, wallet })
+  } catch (err: any) {
+    res.status(500).send(err.message)
+  }
+})
+
+app.post('/users/login', async (req: Request, res: Response) => {
+  try {
+    const params: PostUsersLoginParams = req.body
+    const { username, password } = params
+    if (!username || !password) {
+      throw new Error('username and/or password is missing')
+    }
+
+    // check if username and password match in database
+    const userDatabaseEntry = await UserDatabaseModel.findOne({
+      username,
+      password,
+    })
+      .lean()
+      .exec()
+    if (!userDatabaseEntry) {
+      throw new Error(
+        `User doesn't exist (username,password): (${username},${password})`
+      )
+    }
+
+    // check if xrplWalletSeed is valid
+    const { xrplWalletSeed } = userDatabaseEntry
+    const wallet = Wallet.fromSeed(xrplWalletSeed)
+    if (!wallet) {
+      throw new Error(`Invalid xrplWalletSeed from database: ${xrplWalletSeed}`)
+    }
+
+    res.send({ username, password, wallet })
+  } catch (err: any) {
+    res.status(500).send(err.message)
+  }
+})
 
 app.get('/campaigns', async (req: Request, res: Response) => {
   try {
