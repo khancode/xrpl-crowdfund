@@ -10,6 +10,7 @@ export interface ICampaignDatabaseModel {
   title: string
   description: string
   overviewUrl: string
+  imageUrl: string
   milestones: IMilestoneDatabaseModel[]
 }
 
@@ -42,6 +43,11 @@ const campaignSchema = new mongoose.Schema<ICampaignDatabaseModel>({
     maxlength: 2500,
   },
   overviewUrl: {
+    type: String,
+    required: true,
+    maxlength: 2300,
+  },
+  imageUrl: {
     type: String,
     required: true,
     maxlength: 2300,

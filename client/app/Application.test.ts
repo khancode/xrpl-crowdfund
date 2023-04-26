@@ -38,6 +38,7 @@ describe('Application', () => {
           title: 'title',
           description: 'description',
           overviewUrl: 'overviewUrl',
+          imageUrl: 'imageUrl',
           fundRaiseGoalInDrops: BigInt(25000000000),
           fundRaiseEndDateInUnixSeconds: nextMonthInUnixSeconds,
           milestones: [

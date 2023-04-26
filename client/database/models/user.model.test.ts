@@ -17,7 +17,8 @@ describe('User model', () => {
 
   it('should save a user with valid data', async () => {
     const userData = {
-      username: 'testuser',
+      // generate a random username to avoid MongoServerError: E11000 duplicate key error
+      username: `testuser${Math.floor(Math.random() * 1000000)}`,
       password: 'testpassword123',
       xrplWalletSeed: 'shf1HiuejdJVPFRpP6oE6Rytj6R5U',
     }

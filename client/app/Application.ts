@@ -55,6 +55,7 @@ export interface CreateCampaignParams {
   title: string
   description: string
   overviewUrl: string
+  imageUrl: string
   fundRaiseGoalInDrops: bigint
   fundRaiseEndDateInUnixSeconds: bigint
   milestones: Array<{
@@ -139,6 +140,7 @@ export class Application {
       title,
       description,
       overviewUrl,
+      imageUrl,
       fundRaiseGoalInDrops,
       fundRaiseEndDateInUnixSeconds,
       milestones,
@@ -200,12 +202,13 @@ export class Application {
     /* Step 7. Check Payment transaction result */
     this._validateTxResponse(paymentResponse, 'createCampaign')
 
-    /* Step 8. Add title(campaign & milestones), description, overviewUrl fields to an off-ledger database (e.g. MongoDB) */
+    /* Step 8. Add title(campaign & milestones), description, overviewUrl, imageUrl fields to an off-ledger database (e.g. MongoDB) */
     const campaignData: ICampaignDatabaseModel = {
       id: campaignId,
       title,
       description,
       overviewUrl,
+      imageUrl,
       milestones: milestones.map((milestone) => {
         return {
           endDateInUnixSeconds: milestone.endDateInUnixSeconds.toString(),

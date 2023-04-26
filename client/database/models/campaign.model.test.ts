@@ -21,6 +21,7 @@ describe('Campaign model', () => {
       title: 'My Campaign',
       description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
       overviewUrl: 'https://example.com/my-campaign',
+      imageUrl: 'https://example.com/my-campaign/image.png',
       milestones: [
         { endDateInUnixSeconds: 1642435200n, title: 'Milestone 1' },
         { endDateInUnixSeconds: 1643521600n, title: 'Milestone 2' },

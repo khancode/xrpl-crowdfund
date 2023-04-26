@@ -10,6 +10,7 @@ export class Campaign {
   title: string // Max length 75 utf-8 characters
   description: string // Max length 2,500 utf-8 characters
   overviewUrl: string // Max length 2,300 utf-8 characters
+  imageUrl: string // Max length 2,300 utf-8 characters
   fundRaiseGoalInDrops: bigint // Use BigInt to support 64-bit unsigned integer values
   fundRaiseEndDateInUnixSeconds: bigint
   totalAmountRaisedInDrops: bigint
@@ -27,6 +28,7 @@ export class Campaign {
     title: string,
     description: string,
     overviewUrl: string,
+    imageUrl: string,
     fundRaiseGoalInDrops: bigint,
     fundRaiseEndDateInUnixSeconds: bigint,
     totalAmountRaisedInDrops: bigint,
@@ -43,6 +45,7 @@ export class Campaign {
     this.title = title
     this.description = description
     this.overviewUrl = overviewUrl
+    this.imageUrl = imageUrl
     this.fundRaiseGoalInDrops = fundRaiseGoalInDrops
     this.fundRaiseEndDateInUnixSeconds = fundRaiseEndDateInUnixSeconds
     this.totalAmountRaisedInDrops = totalAmountRaisedInDrops
@@ -74,6 +77,7 @@ export class Campaign {
       title: this.title,
       description: this.description,
       overviewUrl: this.overviewUrl,
+      imageUrl: this.imageUrl,
       fundRaiseGoalInDrops: this.fundRaiseGoalInDrops.toString(),
       fundRaiseEndDateInUnixSeconds:
         this.fundRaiseEndDateInUnixSeconds.toString(),

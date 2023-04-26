@@ -50,6 +50,7 @@ type PostCampaignParams = {
   title: string
   description: string
   overviewUrl: string
+  imageUrl: string
   fundRaiseGoalInDrops: string
   fundRaiseEndDateInUnixSeconds: string
   milestones: Array<{
@@ -201,6 +202,7 @@ app.post('/campaigns', async (req: Request, res: Response) => {
       title: params.title,
       description: params.description,
       overviewUrl: params.overviewUrl,
+      imageUrl: params.imageUrl,
       fundRaiseGoalInDrops: BigInt(params.fundRaiseGoalInDrops),
       fundRaiseEndDateInUnixSeconds: BigInt(
         params.fundRaiseEndDateInUnixSeconds

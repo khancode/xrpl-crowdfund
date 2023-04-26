@@ -142,6 +142,7 @@ export class StateUtility {
           campaignDatabaseEntry.title,
           campaignDatabaseEntry.description,
           campaignDatabaseEntry.overviewUrl,
+          campaignDatabaseEntry.imageUrl,
           generalInfo.fundRaiseGoalInDrops,
           generalInfo.fundRaiseEndDateInUnixSeconds,
           generalInfo.totalAmountRaisedInDrops,

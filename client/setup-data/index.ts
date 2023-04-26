@@ -199,6 +199,8 @@ async function historicalFailedFundraise(
     description:
       "Our minimalist wallet is designed to hold all of your essentials while taking up minimal space in your pocket. Made from high-quality materials, it's both durable and stylish.",
     overviewUrl: 'https://www.coolwallets.com/minimalist-wallet-campaign',
+    imageUrl:
+      'https://images.unsplash.com/photo-1531190260877-c8d11eb5afaf?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('4_MONTH_BEFORE'),
@@ -263,6 +265,8 @@ async function historicalFailedMilestone2of3(
     description:
       "Our board game is a fun and challenging strategy game that can be played by 2-4 players. With high-quality components and engaging gameplay, it's perfect for game night with friends and family.",
     overviewUrl: 'https://www.nightowlgames.com/board-game-campaign',
+    imageUrl:
+      'https://images.unsplash.com/photo-1484910292437-025e5d13ce87?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('5_MONTH_BEFORE'),
@@ -419,6 +423,8 @@ async function historicalSucceeded(
     description:
       "Our documentary film explores a compelling and important topic that is often overlooked in mainstream media. With high-quality production values and expert interviews, it's a must-see for anyone interested in this subject.",
     overviewUrl: 'https://www.insightsfilmco.com/documentary-film-campaign',
+    imageUrl:
+      'https://images.unsplash.com/photo-1508169351866-777fc0047ac5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('5_MONTH_BEFORE'),
@@ -550,6 +556,8 @@ async function inProgressFundraise(
     description:
       "Our smart water bottle uses advanced sensors and algorithms to track your hydration levels and provide personalized hydration recommendations. With a sleek and modern design, it's perfect for staying hydrated on-the-go.",
     overviewUrl: 'https://www.h2osmartbottle.com/smart-water-bottle-campaign',
+    imageUrl:
+      'https://images.unsplash.com/photo-1625708458528-802ec79b1ed8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
@@ -625,6 +633,8 @@ async function inProgressMilestone1of3VoteRejectOpportunity(
     description:
       "Our customizable watch allows you to mix and match different components to create a unique and personalized watch that reflects your style. With high-quality materials and a wide range of options, it's perfect for watch enthusiasts and fashion-forward individuals.",
     overviewUrl: 'https://www.zeitgeistwatches.com/customizable-watch-campaign',
+    imageUrl:
+      'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('1_MONTH_BEFORE'),
@@ -733,6 +743,8 @@ async function failedMilestone2of3Payout1of3DoneRequestRefundPaymentOpportunity(
       "Our backpack is designed for all your adventures - whether it's hiking, traveling, or commuting. With multiple compartments and high-quality materials, it's perfect for carrying all your essentials in style.",
     overviewUrl:
       'https://www.adventurebackpackco.com/multi-purpose-backpack-campaign',
+    imageUrl:
+      'https://images.unsplash.com/photo-1600019248002-f4c4898f739b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('2_MONTH_BEFORE'),
@@ -863,6 +875,8 @@ async function inProgressMilestone3of3Payout1of3DonePendingPayout2of3RequestMile
     description:
       "Our fitness tracker uses advanced sensors and algorithms to track your fitness goals and provide personalized recommendations. With a sleek and modern design, it's perfect for staying motivated and reaching your fitness goals.",
     overviewUrl: 'https://www.fittechco.com/fitness-tracker-campaign',
+    imageUrl:
+      'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('3_MONTH_BEFORE'),
@@ -976,6 +990,8 @@ async function completedAllMilestonePayout1and2of3DonePendingPayout3of3RequestMi
     description:
       "Our wireless earbuds use advanced audio technology to provide an immersive audio experience. With high-quality sound and noise-cancellation, it's perfect for music lovers and audiophiles.",
     overviewUrl: 'https://www.audiogearco.com/wireless-earbuds-campaign',
+    imageUrl:
+      'https://images.unsplash.com/photo-1606135185526-1bd767d76d65?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8',
     fundRaiseGoalInDrops: 100000000n,
     fundRaiseEndDateInUnixSeconds:
       dateOffsetToUnixTimestampInSeconds('4_MONTH_BEFORE'),

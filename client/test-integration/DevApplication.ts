@@ -47,6 +47,7 @@ export interface DevCreateCampaignParams {
   title: string
   description: string
   overviewUrl: string
+  imageUrl: string
   fundRaiseGoalInDrops: bigint
   fundRaiseEndDateInUnixSeconds: bigint
   milestones: Array<{
@@ -90,6 +91,7 @@ export class DevApplication {
     const {
       mockCurrentTimeInUnixSeconds,
       ownerWallet,
+      imageUrl,
       depositInDrops,
       title,
       description,
@@ -162,6 +164,7 @@ export class DevApplication {
       title,
       description,
       overviewUrl,
+      imageUrl,
       milestones: milestones.map((milestone) => {
         return {
           endDateInUnixSeconds: milestone.endDateInUnixSeconds.toString(),
