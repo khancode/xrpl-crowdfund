@@ -442,8 +442,14 @@ int64_t hook(uint32_t reserved) {
             rollback(SBUF("Milestone has failed. Payout ineligible."), 400);
         }
 
-        /* Step 3. Check if Milestone has already been paid out */
+        /* Step 4. Check if Milestone is completed */
         uint8_t* milestone_ptr = general_info_buffer + GENERAL_INFO_MILESTONES_INDEX + 1 + (milestone_index * MILESTONE_BYTES);
+        uint64_t milestone_end_date_in_unix_seconds = UINT64_FROM_BUF(milestone_ptr + GENERAL_INFO_MILESTONE_END_DATE_IN_UNIX_SECONDS_INDEX_OFFSET);
+        if (current_time_unix_seconds < milestone_end_date_in_unix_seconds) {
+            rollback(SBUF("Milestone is not completed yet. Payout ineligible."), 400);
+        }
+
+        /* Step 5. Check if Milestone has already been paid out */
         uint8_t milestone_state = milestone_ptr[GENERAL_INFO_MILESTONE_STATE_INDEX_OFFSET];
         TRACEVAR(milestone_state);
         if (milestone_state == MILESTONE_STATE_PAID_FLAG) {
@@ -454,7 +460,7 @@ int64_t hook(uint32_t reserved) {
         /* Step 1. Before we start calling hook-api functions we should tell the hook how many tx we intend to create */
         etxn_reserve(1); // we are going to emit 1 transaction
 
-        /* Step 2. Compute Refund Payment Amount */
+        /* Step 2. Compute Milestone Payout Payment Amount */
         uint64_t total_amount_raised_in_drops = UINT64_FROM_BUF(general_info_buffer + GENERAL_INFO_TOTAL_AMOUNT_RAISED_IN_DROPS_INDEX);
         uint8_t payout_percent = milestone_ptr[GENERAL_INFO_MILESTONE_PAYOUT_PERCENT_INDEX_OFFSET];
         TRACEVAR(total_amount_raised_in_drops);
