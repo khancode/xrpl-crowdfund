@@ -1,7 +1,11 @@
 import accounts from './accounts.json'
 import { client, connectClient, disconnectClient } from '../util/xrplClient'
 import { Wallet } from 'xrpl'
-import { Application, VoteRejectMilestoneParams } from '../app/Application'
+import {
+  Application,
+  VoteApproveMilestoneParams,
+  VoteRejectMilestoneParams,
+} from '../app/Application'
 import { StateUtility } from '../util/StateUtility'
 import {
   DevApplication,
@@ -18,15 +22,10 @@ import connectDatabase from '../database'
 import { Connection } from 'mongoose'
 import { HSVCampaignGeneralInfo } from '../app/models/HSVCampaignGeneralInfo'
 import { HSVFundTransactionsPage } from '../app/models/HSVFundTransactionsPage'
-import {
-  CAMPAIGN_STATE_FAILED_MILESTONE_1_FLAG,
-  FUND_TRANSACTION_STATE_REJECT_FLAG,
-  MILESTONE_STATE_FAILED_FLAG,
-} from '../app/constants'
+import { FUND_TRANSACTION_STATE_APPROVE_FLAG } from '../app/constants'
 import { HSVFundTransaction } from '../app/models/HSVFundTransaction'
-import { HSVMilestone } from '../app/models/HSVMilestone'
 
-describe('voteRejectMilestone', () => {
+describe('voteApproveMilestone', () => {
   let database: Connection
   let owner: Wallet
   let backer1: Wallet
@@ -113,6 +112,13 @@ describe('voteRejectMilestone', () => {
       client,
       fundCampaignParams2
     )
+
+    const params: VoteRejectMilestoneParams = {
+      backerWallet: backer1,
+      campaignId,
+      fundTransactionId: fundTransactionId1,
+    }
+    await Application.voteRejectMilestone(client, params)
   })
 
   afterAll(async () => {
@@ -120,7 +126,7 @@ describe('voteRejectMilestone', () => {
     await database.close()
   })
 
-  it('should vote reject milestone a campaign with only 2 backers', async () => {
+  it('should vote approve milestone a campaign with from reject to approve', async () => {
     // Get the current HookState
     const hookStateBefore = await StateUtility.getHookState(client)
     const hookStateEntriesBefore = getHookStateEntriesOfCampaign(
@@ -132,16 +138,16 @@ describe('voteRejectMilestone', () => {
     const hsvFundTransactionsPageBefore = hookStateEntriesBefore
       .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
 
-    // Vote reject milestone
-    const params: VoteRejectMilestoneParams = {
+    // Vote approve milestone
+    const params: VoteApproveMilestoneParams = {
       backerWallet: backer1,
       campaignId,
       fundTransactionId: fundTransactionId1,
     }
 
-    await Application.voteRejectMilestone(client, params)
+    await Application.voteApproveMilestone(client, params)
 
-    // Verify that vote reject milestone made changes to Hook State
+    // Verify that vote approve milestone made changes to Hook State
     const hookStateAfter = await StateUtility.getHookState(client)
     const newHookStateEntries = getHookStateEntriesOfCampaign(
       hookStateAfter,
@@ -157,7 +163,7 @@ describe('voteRejectMilestone', () => {
     const expectHsvGeneralInfo = cloneHSVCampaignGeneralInfo(
       hsvGeneralInfoBefore,
       {
-        totalRejectVotesForCurrentMilestone: 1,
+        totalRejectVotesForCurrentMilestone: 0,
       }
     )
 
@@ -171,7 +177,7 @@ describe('voteRejectMilestone', () => {
           hsvFundTransaction: new HSVFundTransaction(
             fundTransactionId1,
             backer1.classicAddress,
-            FUND_TRANSACTION_STATE_REJECT_FLAG,
+            FUND_TRANSACTION_STATE_APPROVE_FLAG,
             400000000n
           ),
         },
@@ -181,7 +187,7 @@ describe('voteRejectMilestone', () => {
     expect(hsvFundTransactionsPageAfter).toEqual(expectHsvFundTransactionsPage)
   })
 
-  it('should throw error when backer has already placed vote reject milestone', async () => {
+  it('should throw error when backer has already placed vote approve milestone', async () => {
     // Get the current HookState
     const hookStateBefore = await StateUtility.getHookState(client)
     const hookStateEntriesBefore = getHookStateEntriesOfCampaign(
@@ -193,135 +199,18 @@ describe('voteRejectMilestone', () => {
     const hsvFundTransactionsPageBefore = hookStateEntriesBefore
       .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
 
-    // Vote reject milestone
-    const params: VoteRejectMilestoneParams = {
+    // Vote approve milestone
+    const params: VoteApproveMilestoneParams = {
       backerWallet: backer1,
       campaignId,
       fundTransactionId: fundTransactionId1,
     }
 
     try {
-      await Application.voteRejectMilestone(client, params)
+      await Application.voteApproveMilestone(client, params)
     } catch (error: any) {
       expect(
         error.message.includes(`Fund Transaction has already placed same vote`)
-      ).toBe(true)
-    }
-
-    const hookStateAfter = await StateUtility.getHookState(client)
-    const newHookStateEntries = getHookStateEntriesOfCampaign(
-      hookStateAfter,
-      campaignId
-    )
-    const hsvGeneralInfoAfter = newHookStateEntries.generalInfo.value
-      .decoded as HSVCampaignGeneralInfo
-    const hsvFundTransactionsPageAfter = newHookStateEntries
-      .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
-
-    expect(hookStateAfter.entries.length).toBe(hookStateBefore.entries.length)
-    expect(hsvGeneralInfoAfter).toEqual(hsvGeneralInfoBefore)
-    expect(hsvFundTransactionsPageAfter).toEqual(hsvFundTransactionsPageBefore)
-  })
-
-  it('should vote reject milestone a campaign where it fails milestone 1', async () => {
-    // Get the current HookState
-    const hookStateBefore = await StateUtility.getHookState(client)
-    const hookStateEntriesBefore = getHookStateEntriesOfCampaign(
-      hookStateBefore,
-      campaignId
-    )
-    const hsvGeneralInfoBefore = hookStateEntriesBefore.generalInfo.value
-      .decoded as HSVCampaignGeneralInfo
-    const hsvFundTransactionsPageBefore = hookStateEntriesBefore
-      .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
-
-    // Vote reject milestone
-    const params: VoteRejectMilestoneParams = {
-      backerWallet: backer2,
-      campaignId,
-      fundTransactionId: fundTransactionId2,
-    }
-
-    await Application.voteRejectMilestone(client, params)
-
-    // Verify that vote reject milestone made changes to Hook State
-    const hookStateAfter = await StateUtility.getHookState(client)
-    const newHookStateEntries = getHookStateEntriesOfCampaign(
-      hookStateAfter,
-      campaignId
-    )
-    const hsvGeneralInfoAfter = newHookStateEntries.generalInfo.value
-      .decoded as HSVCampaignGeneralInfo
-    const hsvFundTransactionsPageAfter = newHookStateEntries
-      .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
-
-    expect(hookStateAfter.entries.length).toBe(hookStateBefore.entries.length)
-
-    const expectHsvGeneralInfo = cloneHSVCampaignGeneralInfo(
-      hsvGeneralInfoBefore,
-      {
-        state: CAMPAIGN_STATE_FAILED_MILESTONE_1_FLAG,
-        totalRejectVotesForCurrentMilestone: 2,
-        milestones: hsvGeneralInfoBefore.milestones.map((milestone, index) => {
-          if (index === 0) {
-            return new HSVMilestone(
-              MILESTONE_STATE_FAILED_FLAG,
-              milestone.endDateInUnixSeconds,
-              milestone.payoutPercent
-            )
-          }
-
-          return milestone
-        }),
-      }
-    )
-
-    expect(hsvGeneralInfoAfter).toEqual(expectHsvGeneralInfo)
-
-    const expectHsvFundTransactionsPage = cloneHSVFundTransactionsPage(
-      hsvFundTransactionsPageBefore,
-      [
-        {
-          pageSlotIndex: 1,
-          hsvFundTransaction: new HSVFundTransaction(
-            fundTransactionId2,
-            backer2.classicAddress,
-            FUND_TRANSACTION_STATE_REJECT_FLAG,
-            400000000n
-          ),
-        },
-      ]
-    )
-
-    expect(hsvFundTransactionsPageAfter).toEqual(expectHsvFundTransactionsPage)
-  })
-
-  it('should throw error when vote reject milestone a campaign in failed milestone state', async () => {
-    // Get the current HookState
-    const hookStateBefore = await StateUtility.getHookState(client)
-    const hookStateEntriesBefore = getHookStateEntriesOfCampaign(
-      hookStateBefore,
-      campaignId
-    )
-    const hsvGeneralInfoBefore = hookStateEntriesBefore.generalInfo.value
-      .decoded as HSVCampaignGeneralInfo
-    const hsvFundTransactionsPageBefore = hookStateEntriesBefore
-      .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
-
-    // Vote reject milestone
-    const params: VoteRejectMilestoneParams = {
-      backerWallet: backer2,
-      campaignId,
-      fundTransactionId: fundTransactionId2,
-    }
-
-    try {
-      await Application.voteRejectMilestone(client, params)
-    } catch (error: any) {
-      expect(
-        error.message.includes(
-          `Campaign has already failed due to a rejected milestone.`
-        )
       ).toBe(true)
     }
 
