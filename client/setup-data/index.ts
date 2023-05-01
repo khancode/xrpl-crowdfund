@@ -812,14 +812,14 @@ async function failedMilestone2of3Payout1of3DoneRequestRefundPaymentOpportunity(
   }
 
   await Promise.all([
-    await DevApplication.voteRejectMilestone(client, {
+    DevApplication.voteRejectMilestone(client, {
       mockCurrentTimeInUnixSeconds:
         dateOffsetToUnixTimestampInSeconds('0_MONTH_AFTER'),
       backerWallet: backer1,
       campaignId,
       fundTransactionId: fundTransactionId1,
     }),
-    await DevApplication.voteRejectMilestone(client, {
+    DevApplication.voteRejectMilestone(client, {
       mockCurrentTimeInUnixSeconds:
         dateOffsetToUnixTimestampInSeconds('0_MONTH_AFTER'),
       backerWallet: backer2,
