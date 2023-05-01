@@ -49,6 +49,8 @@ describe('fundCampaign', () => {
       description:
         "Our fitness tracker uses advanced sensors and algorithms to track your fitness goals and provide personalized recommendations. With a sleek and modern design, it's perfect for staying motivated and reaching your fitness goals.",
       overviewUrl: 'https://www.fittechco.com/fitness-tracker-campaign',
+      imageUrl:
+        'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80',
       fundRaiseGoalInDrops: 100000000n,
       fundRaiseEndDateInUnixSeconds:
         dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),

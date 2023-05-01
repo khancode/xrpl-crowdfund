@@ -63,6 +63,8 @@ describe('createCampaign', () => {
         "Our backpack is designed for all your adventures - whether it's hiking, traveling, or commuting. With multiple compartments and high-quality materials, it's perfect for carrying all your essentials in style.",
       overviewUrl:
         'https://www.adventurebackpackco.com/multi-purpose-backpack-campaign',
+      imageUrl:
+        'https://images.unsplash.com/photo-1606135185526-1bd767d76d65?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8',
       fundRaiseGoalInDrops: 100000000n,
       fundRaiseEndDateInUnixSeconds:
         dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
