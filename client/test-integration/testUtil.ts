@@ -92,7 +92,7 @@ export function verifyHookStateKey(
 
 export function cloneHSVCampaignGeneralInfo(
   hsvGeneralInfo: HSVCampaignGeneralInfo | null,
-  params: {
+  params?: {
     state?: number
     owner?: string
     fundRaiseGoalInDrops?: bigint
@@ -109,40 +109,43 @@ export function cloneHSVCampaignGeneralInfo(
   const modifiedHsvGeneralInfo: any =
     hsvGeneralInfo === null ? {} : { ...hsvGeneralInfo }
 
-  if (params.state !== undefined) {
-    modifiedHsvGeneralInfo.state = params.state
-  }
-  if (params.owner !== undefined) {
-    modifiedHsvGeneralInfo.owner = params.owner
-  }
-  if (params.fundRaiseGoalInDrops !== undefined) {
-    modifiedHsvGeneralInfo.fundRaiseGoalInDrops = params.fundRaiseGoalInDrops
-  }
-  if (params.fundRaiseEndDateInUnixSeconds !== undefined) {
-    modifiedHsvGeneralInfo.fundRaiseEndDateInUnixSeconds =
-      params.fundRaiseEndDateInUnixSeconds
-  }
-  if (params.totalAmountRaisedInDrops !== undefined) {
-    modifiedHsvGeneralInfo.totalAmountRaisedInDrops =
-      params.totalAmountRaisedInDrops
-  }
-  if (params.totalAmountNonRefundableInDrops !== undefined) {
-    modifiedHsvGeneralInfo.totalAmountNonRefundableInDrops =
-      params.totalAmountNonRefundableInDrops
-  }
-  if (params.totalReserveAmountInDrops !== undefined) {
-    modifiedHsvGeneralInfo.totalReserveAmountInDrops =
-      params.totalReserveAmountInDrops
-  }
-  if (params.totalFundTransactions !== undefined) {
-    modifiedHsvGeneralInfo.totalFundTransactions = params.totalFundTransactions
-  }
-  if (params.totalRejectVotesForCurrentMilestone !== undefined) {
-    modifiedHsvGeneralInfo.totalRejectVotesForCurrentMilestone =
-      params.totalRejectVotesForCurrentMilestone
-  }
-  if (params.milestones !== undefined) {
-    modifiedHsvGeneralInfo.milestones = params.milestones
+  if (params) {
+    if (params.state !== undefined) {
+      modifiedHsvGeneralInfo.state = params.state
+    }
+    if (params.owner !== undefined) {
+      modifiedHsvGeneralInfo.owner = params.owner
+    }
+    if (params.fundRaiseGoalInDrops !== undefined) {
+      modifiedHsvGeneralInfo.fundRaiseGoalInDrops = params.fundRaiseGoalInDrops
+    }
+    if (params.fundRaiseEndDateInUnixSeconds !== undefined) {
+      modifiedHsvGeneralInfo.fundRaiseEndDateInUnixSeconds =
+        params.fundRaiseEndDateInUnixSeconds
+    }
+    if (params.totalAmountRaisedInDrops !== undefined) {
+      modifiedHsvGeneralInfo.totalAmountRaisedInDrops =
+        params.totalAmountRaisedInDrops
+    }
+    if (params.totalAmountNonRefundableInDrops !== undefined) {
+      modifiedHsvGeneralInfo.totalAmountNonRefundableInDrops =
+        params.totalAmountNonRefundableInDrops
+    }
+    if (params.totalReserveAmountInDrops !== undefined) {
+      modifiedHsvGeneralInfo.totalReserveAmountInDrops =
+        params.totalReserveAmountInDrops
+    }
+    if (params.totalFundTransactions !== undefined) {
+      modifiedHsvGeneralInfo.totalFundTransactions =
+        params.totalFundTransactions
+    }
+    if (params.totalRejectVotesForCurrentMilestone !== undefined) {
+      modifiedHsvGeneralInfo.totalRejectVotesForCurrentMilestone =
+        params.totalRejectVotesForCurrentMilestone
+    }
+    if (params.milestones !== undefined) {
+      modifiedHsvGeneralInfo.milestones = params.milestones
+    }
   }
 
   return new HSVCampaignGeneralInfo(
@@ -161,7 +164,7 @@ export function cloneHSVCampaignGeneralInfo(
 
 export function cloneHSVFundTransactionsPage(
   hsvFundTransactionsPage: HSVFundTransactionsPage | null,
-  params: Array<{
+  params?: Array<{
     pageSlotIndex: number
     hsvFundTransaction: HSVFundTransaction
   }>
@@ -172,12 +175,14 @@ export function cloneHSVFundTransactionsPage(
       ? { fundTransactions: [] }
       : { ...hsvFundTransactionsPage }
 
-  params.forEach((param) => {
-    if (param.pageSlotIndex >= 0) {
-      modifiedHsvFundTransactionsPage.fundTransactions[param.pageSlotIndex] =
-        param.hsvFundTransaction
-    }
-  })
+  if (params) {
+    params.forEach((param) => {
+      if (param.pageSlotIndex >= 0) {
+        modifiedHsvFundTransactionsPage.fundTransactions[param.pageSlotIndex] =
+          param.hsvFundTransaction
+      }
+    })
+  }
 
   return new HSVFundTransactionsPage(
     modifiedHsvFundTransactionsPage.fundTransactions
