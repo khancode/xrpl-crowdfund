@@ -447,13 +447,24 @@ int64_t hook(uint32_t reserved) {
             rollback(SBUF("Invalid milestone index. Milestone does not exist."), 400);
         }
 
-        /* Step 2. Check if milestone hasn't failed by looking at campaign state */
+        /* Step 2. Check if campaign fund goal is/was reached */
         uint8_t campaign_state = general_info_buffer[GENERAL_INFO_STATE_INDEX];
+        if (campaign_state == CAMPAIGN_STATE_DERIVE_FLAG) {
+            uint64_t total_amount_raised_in_drops = UINT64_FROM_BUF(general_info_buffer + GENERAL_INFO_TOTAL_AMOUNT_RAISED_IN_DROPS_INDEX);
+            uint64_t fund_goal_in_drops = UINT64_FROM_BUF(general_info_buffer + GENERAL_INFO_FUND_RAISE_GOAL_IN_DROPS_INDEX);
+            TRACEVAR(total_amount_raised_in_drops);
+            TRACEVAR(fund_goal_in_drops);
+            if (total_amount_raised_in_drops < fund_goal_in_drops) {
+                rollback(SBUF("Campaign fund goal is/was not reached."), 400);
+            }
+        }
+
+        /* Step 3. Check if milestone hasn't failed by looking at campaign state */
         if (campaign_state >= CAMPAIGN_STATE_FAILED_MILESTONE_1_FLAG && campaign_state <= CAMPAIGN_STATE_FAILED_MILESTONE_10_FLAG && milestone_index + 1 >= campaign_state) {
             rollback(SBUF("Milestone has failed. Payout ineligible."), 400);
         }
 
-        /* Step 3. Check if Milestone has already been paid out */
+        /* Step 4. Check if Milestone has already been paid out */
         uint8_t* milestone_ptr = general_info_buffer + GENERAL_INFO_MILESTONES_INDEX + 1 + (milestone_index * MILESTONE_BYTES);
         uint8_t milestone_state = milestone_ptr[GENERAL_INFO_MILESTONE_STATE_INDEX_OFFSET];
         TRACEVAR(milestone_state);

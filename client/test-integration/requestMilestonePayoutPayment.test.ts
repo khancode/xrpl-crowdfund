@@ -1,7 +1,10 @@
 import accounts from './accounts.json'
 import { client, connectClient, disconnectClient } from '../util/xrplClient'
 import { Wallet } from 'xrpl'
-import { Application, RequestRefundPaymentParams } from '../app/Application'
+import {
+  Application,
+  RequestMilestonePayoutPaymentParams,
+} from '../app/Application'
 import { StateUtility } from '../util/StateUtility'
 import {
   DevApplication,
@@ -10,7 +13,6 @@ import {
 } from './DevApplication'
 import {
   cloneHSVCampaignGeneralInfo,
-  cloneHSVFundTransactionsPage,
   dateOffsetToUnixTimestampInSeconds,
   getHookStateEntriesOfCampaign,
 } from './testUtil'
@@ -18,10 +20,10 @@ import connectDatabase from '../database'
 import { Connection } from 'mongoose'
 import { HSVCampaignGeneralInfo } from '../app/models/HSVCampaignGeneralInfo'
 import { HSVFundTransactionsPage } from '../app/models/HSVFundTransactionsPage'
-import { FUND_TRANSACTION_STATE_REFUNDED_FLAG } from '../app/constants'
-import { HSVFundTransaction } from '../app/models/HSVFundTransaction'
+import { MILESTONE_STATE_PAID_FLAG } from '../app/constants'
+import { HSVMilestone } from '../app/models/HSVMilestone'
 
-describe('requestRefundPayment', () => {
+describe('requestMilestonePayoutPayment', () => {
   let database: Connection
   let owner: Wallet
   let backer1: Wallet
@@ -36,13 +38,14 @@ describe('requestRefundPayment', () => {
     await connectClient()
     database = await connectDatabase()
 
-    const requestRefundPaymentAccounts = accounts['requestRefundPayment']
-    owner = Wallet.fromSeed(requestRefundPaymentAccounts[0].seed)
-    backer1 = Wallet.fromSeed(requestRefundPaymentAccounts[1].seed)
-    backer2 = Wallet.fromSeed(requestRefundPaymentAccounts[2].seed)
-    backer3 = Wallet.fromSeed(requestRefundPaymentAccounts[3].seed)
+    const requestMilestonePayoutPaymentAccounts =
+      accounts['requestMilestonePayoutPayment']
+    owner = Wallet.fromSeed(requestMilestonePayoutPaymentAccounts[0].seed)
+    backer1 = Wallet.fromSeed(requestMilestonePayoutPaymentAccounts[1].seed)
+    backer2 = Wallet.fromSeed(requestMilestonePayoutPaymentAccounts[2].seed)
+    backer3 = Wallet.fromSeed(requestMilestonePayoutPaymentAccounts[3].seed)
     mockCurrentTimeInUnixSeconds =
-      dateOffsetToUnixTimestampInSeconds('3_MONTH_BEFORE')
+      dateOffsetToUnixTimestampInSeconds('6_MONTH_BEFORE')
 
     const createCampaignParams: DevCreateCampaignParams = {
       mockCurrentTimeInUnixSeconds,
@@ -56,23 +59,23 @@ describe('requestRefundPayment', () => {
         'https://images.unsplash.com/photo-1606135185526-1bd767d76d65?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8',
       fundRaiseGoalInDrops: 100000000n,
       fundRaiseEndDateInUnixSeconds:
-        dateOffsetToUnixTimestampInSeconds('1_MONTH_BEFORE'),
+        dateOffsetToUnixTimestampInSeconds('5_MONTH_BEFORE'),
       milestones: [
         {
           endDateInUnixSeconds:
-            dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
+            dateOffsetToUnixTimestampInSeconds('1_MONTH_BEFORE'),
           title: 'Initial funds to cover design and prototype costs',
           payoutPercent: 25,
         },
         {
           endDateInUnixSeconds:
-            dateOffsetToUnixTimestampInSeconds('2_MONTH_AFTER'),
+            dateOffsetToUnixTimestampInSeconds('1_MONTH_AFTER'),
           title: 'Design and prototype wireless earbuds',
           payoutPercent: 25,
         },
         {
           endDateInUnixSeconds:
-            dateOffsetToUnixTimestampInSeconds('3_MONTH_AFTER'),
+            dateOffsetToUnixTimestampInSeconds('2_MONTH_AFTER'),
           title: 'Launch wireless earbuds on Kickstarter',
           payoutPercent: 50,
         },
@@ -90,7 +93,7 @@ describe('requestRefundPayment', () => {
       backerWallet: backer1,
       campaignId,
       fundAmountInDrops:
-        400000000n + Application.getFundCampaignDepositInDrops(),
+        50000000n + Application.getFundCampaignDepositInDrops(),
     }
     fundTransactionId1 = await DevApplication.fundCampaign(
       client,
@@ -102,25 +105,12 @@ describe('requestRefundPayment', () => {
       backerWallet: backer2,
       campaignId,
       fundAmountInDrops:
-        400000000n + Application.getFundCampaignDepositInDrops(),
+        50000000n + Application.getFundCampaignDepositInDrops(),
     }
     fundTransactionId2 = await DevApplication.fundCampaign(
       client,
       fundCampaignParams2
     )
-
-    await Promise.all([
-      Application.voteRejectMilestone(client, {
-        backerWallet: backer1,
-        campaignId,
-        fundTransactionId: fundTransactionId1,
-      }),
-      Application.voteRejectMilestone(client, {
-        backerWallet: backer2,
-        campaignId,
-        fundTransactionId: fundTransactionId2,
-      }),
-    ])
   })
 
   afterAll(async () => {
@@ -128,7 +118,7 @@ describe('requestRefundPayment', () => {
     await database.close()
   })
 
-  it('should request a refund payment', async () => {
+  it('should request a milestone payout payment of milestone 1', async () => {
     // Get the current HookState
     const hookStateBefore = await StateUtility.getHookState(client)
     const hookStateEntriesBefore = getHookStateEntriesOfCampaign(
@@ -140,21 +130,21 @@ describe('requestRefundPayment', () => {
     const hsvFundTransactionsPageBefore = hookStateEntriesBefore
       .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
 
-    // Request refund payment
-    const params: RequestRefundPaymentParams = {
-      backerWallet: backer1,
+    // Request milestone payout payment
+    const params: RequestMilestonePayoutPaymentParams = {
+      ownerWallet: owner,
       campaignId,
-      fundTransactionId: fundTransactionId1,
+      milestoneIndex: 0,
     }
 
-    const refundAmountInDrops = await Application.requestRefundPayment(
+    const payoutAmountInDrops = await Application.requestMilestonePayoutPayment(
       client,
       params
     )
 
-    expect(refundAmountInDrops).toBe(399999999n)
+    expect(payoutAmountInDrops).toBe(25000000n)
 
-    // Verify that request refund payment made changes to Hook State
+    // Verify that request milestone payout payment made changes to Hook State
     const hookStateAfter = await StateUtility.getHookState(client)
     const newHookStateEntries = getHookStateEntriesOfCampaign(
       hookStateAfter,
@@ -170,31 +160,26 @@ describe('requestRefundPayment', () => {
     const expectHsvGeneralInfo = cloneHSVCampaignGeneralInfo(
       hsvGeneralInfoBefore,
       {
-        totalRejectVotesForCurrentMilestone: 2,
+        milestones: hsvGeneralInfoBefore.milestones.map((milestone, index) => {
+          if (index === 0) {
+            return new HSVMilestone(
+              MILESTONE_STATE_PAID_FLAG,
+              milestone.endDateInUnixSeconds,
+              milestone.payoutPercent
+            )
+          } else {
+            return milestone
+          }
+        }),
       }
     )
 
     expect(hsvGeneralInfoAfter).toEqual(expectHsvGeneralInfo)
 
-    const expectHsvFundTransactionsPage = cloneHSVFundTransactionsPage(
-      hsvFundTransactionsPageBefore,
-      [
-        {
-          pageSlotIndex: 0,
-          hsvFundTransaction: new HSVFundTransaction(
-            fundTransactionId1,
-            backer1.classicAddress,
-            FUND_TRANSACTION_STATE_REFUNDED_FLAG,
-            400000000n
-          ),
-        },
-      ]
-    )
-
-    expect(hsvFundTransactionsPageAfter).toEqual(expectHsvFundTransactionsPage)
+    expect(hsvFundTransactionsPageAfter).toEqual(hsvFundTransactionsPageBefore)
   })
 
-  it('should throw error when backer has already been refunded', async () => {
+  it('should throw error when owner has already been paid out milestone 1', async () => {
     // Get the current HookState
     const hookStateBefore = await StateUtility.getHookState(client)
     const hookStateEntriesBefore = getHookStateEntriesOfCampaign(
@@ -206,18 +191,18 @@ describe('requestRefundPayment', () => {
     const hsvFundTransactionsPageBefore = hookStateEntriesBefore
       .fundTransactionsPages[0].value.decoded as HSVFundTransactionsPage
 
-    // Request refund payment
-    const params: RequestRefundPaymentParams = {
-      backerWallet: backer1,
+    // Request milestone payout payment
+    const params: RequestMilestonePayoutPaymentParams = {
+      ownerWallet: owner,
       campaignId,
-      fundTransactionId: fundTransactionId1,
+      milestoneIndex: 0,
     }
 
     try {
-      await Application.requestRefundPayment(client, params)
+      await Application.requestMilestonePayoutPayment(client, params)
     } catch (error: any) {
       expect(
-        error.message.includes(`Fund Transaction has already been refunded`)
+        error.message.includes(`Milestone has already been paid out.`)
       ).toBe(true)
     }
 

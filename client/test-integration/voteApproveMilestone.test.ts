@@ -40,11 +40,11 @@ describe('voteApproveMilestone', () => {
     await connectClient()
     database = await connectDatabase()
 
-    const voteRejectMilestoneAccounts = accounts['voteRejectMilestone']
-    owner = Wallet.fromSeed(voteRejectMilestoneAccounts[0].seed)
-    backer1 = Wallet.fromSeed(voteRejectMilestoneAccounts[1].seed)
-    backer2 = Wallet.fromSeed(voteRejectMilestoneAccounts[2].seed)
-    backer3 = Wallet.fromSeed(voteRejectMilestoneAccounts[3].seed)
+    const voteApproveMilestoneAccounts = accounts['voteApproveMilestone']
+    owner = Wallet.fromSeed(voteApproveMilestoneAccounts[0].seed)
+    backer1 = Wallet.fromSeed(voteApproveMilestoneAccounts[1].seed)
+    backer2 = Wallet.fromSeed(voteApproveMilestoneAccounts[2].seed)
+    backer3 = Wallet.fromSeed(voteApproveMilestoneAccounts[3].seed)
     mockCurrentTimeInUnixSeconds =
       dateOffsetToUnixTimestampInSeconds('3_MONTH_BEFORE')
 
